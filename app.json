@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "JDR App",
+    "slug": "jdr-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0D0D0F"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0D0D0F"
+      },
+      "package": "com.jdrapp.mobile"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Autoriser JDR App à accéder à vos photos pour les portraits de personnages."
+        }
+      ]
+    ]
+  }
+}
