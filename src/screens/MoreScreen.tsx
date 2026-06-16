@@ -147,6 +147,13 @@ export const MoreScreen: React.FC = () => {
         onPress={() => navigation.navigate('Multiplayer')}
       />
       <MenuCard
+        icon="📡"
+        title="Partie en Réseau (LAN)"
+        subtitle="Rejoindre via code sur le même Wi-Fi"
+        color={colors.mana}
+        onPress={() => navigation.navigate('Lan')}
+      />
+      <MenuCard
         icon="🧭"
         title="Carte Interactive"
         subtitle="Importez une carte et placez des marqueurs"
@@ -178,7 +185,7 @@ export const MoreScreen: React.FC = () => {
         onPress={handleSwitchCampaign}
       />
 
-      <Text style={styles.version}>JDR App v1.1.0 · Fait avec ❤️ pour les aventuriers</Text>
+      <Text style={styles.version}>JDR App v1.2.0 · Fait avec ❤️ pour les aventuriers</Text>
     </ScrollView>
   );
 };

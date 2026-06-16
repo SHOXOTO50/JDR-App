@@ -13,6 +13,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { QuestsScreen } from '../screens/QuestsScreen';
 import { MapScreen } from '../screens/MapScreen';
 import { MultiplayerScreen } from '../screens/MultiplayerScreen';
+import { LanScreen } from '../screens/LanScreen';
 import { colors } from '../theme';
 
 export type RootStackParamList = {
@@ -27,6 +28,7 @@ export type RootStackParamList = {
   Quests: undefined;
   Map: undefined;
   Multiplayer: undefined;
+  Lan: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -79,6 +81,7 @@ export const AppNavigator: React.FC = () => {
         <Stack.Screen name="Campaign" component={CampaignScreen} options={{ title: 'Campagnes' }} />
         <Stack.Screen name="Map" component={MapScreen} options={{ title: 'Carte Interactive' }} />
         <Stack.Screen name="Multiplayer" component={MultiplayerScreen} options={{ title: 'Multijoueur Local' }} />
+        <Stack.Screen name="Lan" component={LanScreen} options={{ title: 'Partie en Réseau (LAN)' }} />
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Paramètres', presentation: 'modal' }} />
         <Stack.Screen name="Quests" component={QuestsScreen} options={{ title: 'Quêtes' }} />
       </>
