@@ -26,6 +26,11 @@ const playersSlice = createSlice({
     deletePlayersByCampaign(state, action: PayloadAction<string>) {
       state.players = state.players.filter((p) => p.campaignId !== action.payload);
     },
+    claimPendingPlayers(state, action: PayloadAction<string>) {
+      state.players.forEach((p) => {
+        if (p.campaignId === '') p.campaignId = action.payload;
+      });
+    },
   },
 });
 
@@ -34,6 +39,7 @@ export const {
   updatePlayer,
   deletePlayer,
   deletePlayersByCampaign,
+  claimPendingPlayers,
 } = playersSlice.actions;
 
 export default playersSlice.reducer;

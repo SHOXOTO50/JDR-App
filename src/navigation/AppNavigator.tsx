@@ -5,6 +5,7 @@ import { useAppSelector } from '../store';
 import { MainTabNavigator } from './MainTabNavigator';
 import { CharacterSelectScreen } from '../screens/CharacterSelectScreen';
 import { CampaignSelectScreen } from '../screens/CampaignSelectScreen';
+import { ModeSelectScreen } from '../screens/ModeSelectScreen';
 import { CreateCharacterScreen } from '../screens/CreateCharacterScreen';
 import { CombatScreen } from '../screens/CombatScreen';
 import { GMScreen } from '../screens/GMScreen';
@@ -18,6 +19,7 @@ import { colors } from '../theme';
 
 export type RootStackParamList = {
   CharacterSelect: undefined;
+  ModeSelect: undefined;
   CampaignSelect: undefined;
   CreateCharacter: { characterId?: string } | undefined;
   Main: undefined;
@@ -36,6 +38,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export const AppNavigator: React.FC = () => {
   const currentCharacterId = useAppSelector((s) => s.characters.currentCharacterId);
   const activeCampaignId = useAppSelector((s) => s.campaign.activeCampaignId);
+  const mode = useAppSelector((s) => s.appMode.mode);
+  const groupReady = useAppSelector((s) => s.appMode.groupReady);
 
   const renderScreens = () => {
     // Step 1: no character → character selection
@@ -56,7 +60,27 @@ export const AppNavigator: React.FC = () => {
       );
     }
 
-    // Step 2: character chosen but no active campaign → campaign gate
+    // Step 2: character chosen but no mode → mode selection (solo / LAN / pass-and-play)
+    if (!mode) {
+      return (
+        <Stack.Screen
+          name="ModeSelect"
+          component={ModeSelectScreen}
+          options={{ headerShown: false }}
+        />
+      );
+    }
+
+    // Step 3: multiplayer modes set up their group/connection before picking a campaign
+    if ((mode === 'local' || mode === 'passplay') && !groupReady) {
+      return mode === 'local' ? (
+        <Stack.Screen name="Lan" component={LanScreen} options={{ title: 'Multijoueur Local (LAN)' }} />
+      ) : (
+        <Stack.Screen name="Multiplayer" component={MultiplayerScreen} options={{ title: 'Pass-and-Play' }} />
+      );
+    }
+
+    // Step 4: no active campaign yet → campaign selection
     if (!activeCampaignId) {
       return (
         <Stack.Screen
@@ -67,7 +91,7 @@ export const AppNavigator: React.FC = () => {
       );
     }
 
-    // Step 3: full app
+    // Step 5: full app
     return (
       <>
         <Stack.Screen name="Main" component={MainTabNavigator} options={{ headerShown: false }} />
@@ -80,8 +104,8 @@ export const AppNavigator: React.FC = () => {
         <Stack.Screen name="GM" component={GMScreen} options={{ title: 'Mode Maître du Jeu' }} />
         <Stack.Screen name="Campaign" component={CampaignScreen} options={{ title: 'Campagnes' }} />
         <Stack.Screen name="Map" component={MapScreen} options={{ title: 'Carte Interactive' }} />
-        <Stack.Screen name="Multiplayer" component={MultiplayerScreen} options={{ title: 'Multijoueur Local' }} />
-        <Stack.Screen name="Lan" component={LanScreen} options={{ title: 'Partie en Réseau (LAN)' }} />
+        <Stack.Screen name="Multiplayer" component={MultiplayerScreen} options={{ title: 'Pass-and-Play' }} />
+        <Stack.Screen name="Lan" component={LanScreen} options={{ title: 'Multijoueur Local (LAN)' }} />
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Paramètres', presentation: 'modal' }} />
         <Stack.Screen name="Quests" component={QuestsScreen} options={{ title: 'Quêtes' }} />
       </>

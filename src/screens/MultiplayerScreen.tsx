@@ -5,6 +5,7 @@ import {
 import { useAppSelector, useAppDispatch } from '../store';
 import { addPlayer, updatePlayer, deletePlayer } from '../store/slices/playersSlice';
 import { selectCharacter } from '../store/slices/charactersSlice';
+import { setAppMode, setGroupReady } from '../store/slices/appModeSlice';
 import { Player, Character } from '../types';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { generateId, getHPColor } from '../utils/helpers';
@@ -24,7 +25,7 @@ export const MultiplayerScreen: React.FC = () => {
   );
   const currentCharacterId = useAppSelector((s) => s.characters.currentCharacterId);
   const characters = useAppSelector((s) => s.characters.characters);
-  const players = useAppSelector((s) => s.players.players.filter((p) => p.campaignId === activeCampaignId));
+  const players = useAppSelector((s) => s.players.players.filter((p) => p.campaignId === (activeCampaignId ?? '')));
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<Player | null>(null);
@@ -73,13 +74,19 @@ export const MultiplayerScreen: React.FC = () => {
     Alert.alert('Au tour de ' + p.name, 'Le personnage actif est maintenant celui de ' + p.name + '. Passez le téléphone !');
   };
 
+  const isSetupGate = !activeCampaignId;
+
   return (
     <View style={styles.container}>
       <View style={styles.banner}>
-        <Text style={styles.bannerLabel}>GROUPE · CAMPAGNE</Text>
-        <Text style={styles.bannerName} numberOfLines={1}>🗺️ {activeCampaign?.name ?? '—'}</Text>
+        <Text style={styles.bannerLabel}>{isSetupGate ? 'CONFIGURATION DU GROUPE' : 'GROUPE · CAMPAGNE'}</Text>
+        <Text style={styles.bannerName} numberOfLines={1}>
+          {isSetupGate ? '🎲 Pass-and-Play' : `🗺️ ${activeCampaign?.name ?? '—'}`}
+        </Text>
         <Text style={styles.bannerHint}>
-          Jeu local sur un seul appareil : ajoutez les joueurs, liez leur personnage, puis passez le téléphone à tour de rôle.
+          {isSetupGate
+            ? 'Ajoutez les joueurs et liez leur personnage. La campagne se choisit une fois le groupe prêt.'
+            : 'Jeu local sur un seul appareil : ajoutez les joueurs, liez leur personnage, puis passez le téléphone à tour de rôle.'}
         </Text>
       </View>
 
@@ -139,6 +146,15 @@ export const MultiplayerScreen: React.FC = () => {
           />
         }
       />
+
+      {isSetupGate && (
+        <View style={styles.gateFooter}>
+          <Button label="Continuer vers le choix de la campagne →" onPress={() => dispatch(setGroupReady(true))} fullWidth />
+          <TouchableOpacity onPress={() => dispatch(setAppMode(null))} style={styles.backLink}>
+            <Text style={styles.backLinkText}>⟵ Changer de mode</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <FAB onPress={openCreate} />
 
@@ -227,6 +243,12 @@ const styles = StyleSheet.create({
   bannerName: { ...typography.h5, color: colors.secondary, marginTop: 2 },
   bannerHint: { ...typography.bodySmall, color: colors.textMuted, marginTop: 6, lineHeight: 17 },
   list: { padding: spacing.md, paddingBottom: 80 },
+  gateFooter: {
+    position: 'absolute', left: 0, right: 0, bottom: 0,
+    padding: spacing.md, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border,
+  },
+  backLink: { alignItems: 'center', marginTop: spacing.sm },
+  backLinkText: { ...typography.body, color: colors.textSecondary, fontWeight: '600' },
   card: {
     backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md,
     marginBottom: spacing.sm, borderWidth: 1, ...shadows.small,

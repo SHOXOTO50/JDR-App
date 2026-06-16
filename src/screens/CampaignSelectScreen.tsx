@@ -7,9 +7,9 @@ import { useAppSelector, useAppDispatch } from '../store';
 import {
   addCampaign, setActiveCampaign, deleteCampaign,
 } from '../store/slices/campaignSlice';
-import { deletePlayersByCampaign } from '../store/slices/playersSlice';
+import { deletePlayersByCampaign, claimPendingPlayers } from '../store/slices/playersSlice';
 import { deleteMapsByCampaign } from '../store/slices/mapsSlice';
-import { selectCharacter } from '../store/slices/charactersSlice';
+import { setAppMode } from '../store/slices/appModeSlice';
 import { Campaign } from '../types';
 import { colors, borderRadius, shadows, spacing, typography } from '../theme';
 import { generateId, formatDate } from '../utils/helpers';
@@ -58,11 +58,13 @@ export const CampaignSelectScreen: React.FC = () => {
     if (!draft.name.trim()) { Alert.alert('Nom requis', 'Donnez un nom à votre campagne.'); return; }
     dispatch(addCampaign(draft));
     dispatch(setActiveCampaign(draft.id));
+    dispatch(claimPendingPlayers(draft.id));
     setModalVisible(false);
   };
 
   const handlePick = (campaign: Campaign) => {
     dispatch(setActiveCampaign(campaign.id));
+    dispatch(claimPendingPlayers(campaign.id));
   };
 
   const handleDelete = (campaign: Campaign) => {
@@ -155,8 +157,8 @@ export const CampaignSelectScreen: React.FC = () => {
               <Text style={styles.createLabel}>Créer une Campagne</Text>
             </LinearGradient>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => dispatch(selectCharacter(null))} style={styles.backLink}>
-            <Text style={styles.backLinkText}>⟵ Changer de personnage</Text>
+          <TouchableOpacity onPress={() => dispatch(setAppMode(null))} style={styles.backLink}>
+            <Text style={styles.backLinkText}>⟵ Changer de mode</Text>
           </TouchableOpacity>
           <Text style={styles.hint}>Appui long sur une campagne pour la supprimer</Text>
         </View>

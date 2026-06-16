@@ -7,6 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppSelector, useAppDispatch } from '../store';
 import { selectCharacter } from '../store/slices/charactersSlice';
 import { setActiveCampaign } from '../store/slices/campaignSlice';
+import { setAppMode } from '../store/slices/appModeSlice';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -64,6 +65,13 @@ export const MoreScreen: React.FC = () => {
     Alert.alert('Changer de personnage', 'Retourner à la sélection de personnage ?', [
       { text: 'Annuler', style: 'cancel' },
       { text: 'Changer', onPress: () => dispatch(selectCharacter(null)) },
+    ]);
+  };
+
+  const handleSwitchMode = () => {
+    Alert.alert('Changer de mode', 'Retourner au choix solo / multijoueur local / pass-and-play ?', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Changer', onPress: () => dispatch(setAppMode(null)) },
     ]);
   };
 
@@ -140,15 +148,15 @@ export const MoreScreen: React.FC = () => {
         onPress={() => navigation.navigate('Campaign')}
       />
       <MenuCard
-        icon="👥"
-        title="Multijoueur Local"
+        icon="🎲"
+        title="Pass-and-Play"
         subtitle="Gérez le groupe sur un seul appareil"
         color={colors.success}
         onPress={() => navigation.navigate('Multiplayer')}
       />
       <MenuCard
         icon="📡"
-        title="Partie en Réseau (LAN)"
+        title="Multijoueur Local (LAN)"
         subtitle="Rejoindre via code sur le même Wi-Fi"
         color={colors.mana}
         onPress={() => navigation.navigate('Lan')}
@@ -178,6 +186,13 @@ export const MoreScreen: React.FC = () => {
         onPress={handleSwitchCharacter}
       />
       <MenuCard
+        icon="🎯"
+        title="Changer de mode"
+        subtitle="Solo, multijoueur local ou pass-and-play"
+        color={colors.textMuted}
+        onPress={handleSwitchMode}
+      />
+      <MenuCard
         icon="🗺️"
         title="Changer de campagne"
         subtitle={activeCampaign ? activeCampaign.name : 'Retour à la sélection'}
@@ -185,7 +200,7 @@ export const MoreScreen: React.FC = () => {
         onPress={handleSwitchCampaign}
       />
 
-      <Text style={styles.version}>JDR App v1.2.0 · Fait avec ❤️ pour les aventuriers</Text>
+      <Text style={styles.version}>JDR App v1.2.1 · Fait avec ❤️ pour les aventuriers</Text>
     </ScrollView>
   );
 };

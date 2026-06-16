@@ -13,6 +13,7 @@ import campaignReducer from './slices/campaignSlice';
 import diceReducer from './slices/diceSlice';
 import mapsReducer from './slices/mapsSlice';
 import playersReducer from './slices/playersSlice';
+import appModeReducer from './slices/appModeSlice';
 
 const rootReducer = combineReducers({
   characters: charactersReducer,
@@ -25,12 +26,13 @@ const rootReducer = combineReducers({
   dice: diceReducer,
   maps: mapsReducer,
   players: playersReducer,
+  appMode: appModeReducer,
 });
 
 const persistConfig = {
   key: 'jdr-app-root',
   storage: AsyncStorage,
-  whitelist: ['characters', 'inventory', 'notes', 'quests', 'gm', 'campaign', 'dice', 'maps', 'players'],
+  whitelist: ['characters', 'inventory', 'notes', 'quests', 'gm', 'campaign', 'dice', 'maps', 'players', 'appMode'],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

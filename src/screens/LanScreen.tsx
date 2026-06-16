@@ -2,9 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
 } from 'react-native';
-import { useAppSelector } from '../store';
+import { useAppSelector, useAppDispatch } from '../store';
 import { useLanSession } from '../net/useLanSession';
 import { CharacterSnapshot, NetPlayer } from '../net/lanProtocol';
+import { setAppMode, setGroupReady } from '../store/slices/appModeSlice';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { getHPColor } from '../utils/helpers';
 import { Input } from '../components/common/Input';
@@ -50,9 +51,11 @@ const PlayerRow = ({ player, canKick, onKick }: {
 };
 
 export const LanScreen: React.FC = () => {
+  const dispatch = useAppDispatch();
   const activeCampaign = useAppSelector((s) =>
     s.campaign.campaigns.find((c) => c.id === s.campaign.activeCampaignId) ?? null
   );
+  const isSetupGate = !activeCampaign;
   const character = useAppSelector((s) => {
     const id = s.characters.currentCharacterId;
     return id ? s.characters.characters.find((c) => c.id === id) : null;
@@ -100,6 +103,18 @@ export const LanScreen: React.FC = () => {
     </View>
   );
 
+  const renderGateFooter = () => {
+    if (!isSetupGate) return null;
+    return (
+      <View style={styles.gateFooter}>
+        <Button label="Continuer vers le choix de la campagne →" onPress={() => dispatch(setGroupReady(true))} fullWidth />
+        <TouchableOpacity onPress={() => dispatch(setAppMode(null))} style={styles.gateBackLink}>
+          <Text style={styles.gateBackLinkText}>⟵ Changer de mode</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   // --- États de connexion ---------------------------------------------------
 
   if (!lan.available) {
@@ -113,6 +128,7 @@ export const LanScreen: React.FC = () => {
             Cette fonctionnalité nécessite la dernière version de l'app installée via APK.
           </Text>
         </View>
+        {renderGateFooter()}
       </View>
     );
   }
@@ -141,6 +157,7 @@ export const LanScreen: React.FC = () => {
 
           <Button label="Arrêter la partie" variant="danger" onPress={lan.leave} fullWidth style={{ marginTop: spacing.lg }} />
         </ScrollView>
+        {renderGateFooter()}
       </View>
     );
   }
@@ -165,6 +182,7 @@ export const LanScreen: React.FC = () => {
 
           <Button label="Quitter la partie" variant="danger" onPress={lan.leave} fullWidth style={{ marginTop: spacing.lg }} />
         </ScrollView>
+        {renderGateFooter()}
       </View>
     );
   }
@@ -179,6 +197,7 @@ export const LanScreen: React.FC = () => {
           <Text style={styles.infoText}>Le MJ vous a retiré de la partie.</Text>
           <Button label="Retour" onPress={lan.leave} style={{ marginTop: spacing.lg }} />
         </View>
+        {renderGateFooter()}
       </View>
     );
   }
@@ -235,6 +254,7 @@ export const LanScreen: React.FC = () => {
         <Text style={styles.footNote}>
           ℹ️ Le multijoueur LAN fonctionne uniquement entre appareils connectés au même réseau Wi-Fi. Certains réseaux publics ou partages de connexion bloquent ces communications.
         </Text>
+        {renderGateFooter()}
       </ScrollView>
     </View>
   );
@@ -312,4 +332,7 @@ const styles = StyleSheet.create({
   },
   errorText: { ...typography.bodySmall, color: colors.errorLight, lineHeight: 18 },
   footNote: { ...typography.caption, color: colors.textMuted, lineHeight: 16, marginTop: spacing.md },
+  gateFooter: { padding: spacing.md, paddingTop: 0 },
+  gateBackLink: { alignItems: 'center', marginTop: spacing.sm },
+  gateBackLinkText: { ...typography.body, color: colors.textSecondary, fontWeight: '600' },
 });
