@@ -122,7 +122,7 @@ export const CharacterSelectScreen: React.FC = () => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.titleDecorator}>✦ ✦ ✦</Text>
-          <Text style={styles.appTitle}>JDR App</Text>
+          <Text style={styles.appTitle}>DiceQuest</Text>
           <Text style={styles.appSubtitle}>Aventures sans Limites</Text>
           <Text style={styles.titleDecorator}>✦ ✦ ✦</Text>
         </View>

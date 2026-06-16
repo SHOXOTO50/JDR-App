@@ -1,15 +1,19 @@
 {
   "expo": {
-    "name": "JDR App",
+    "name": "DiceQuest",
     "slug": "jdr-app",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#0D0D0F"
+      "backgroundColor": "#0D0D0F",
+      "image": "./assets/splash.png",
+      "resizeMode": "contain"
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0D0D0F"
       },
       "package": "com.jdrapp.mobile"
@@ -18,7 +22,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Autoriser JDR App à accéder à vos photos pour les portraits de personnages."
+          "photosPermission": "Autoriser DiceQuest à accéder à vos photos pour les portraits de personnages et les cartes."
         }
       ]
     ]

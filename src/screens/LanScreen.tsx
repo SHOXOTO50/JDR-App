@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppSelector, useAppDispatch } from '../store';
 import { useLan } from '../net/LanContext';
 import { CharacterSnapshot, NetPlayer } from '../net/lanProtocol';
@@ -12,6 +14,9 @@ import { getHPColor } from '../utils/helpers';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { useBackHandler } from '../hooks/useBackHandler';
+import { RootStackParamList } from '../navigation/AppNavigator';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const PlayerRow = ({ player, canKick, onKick }: {
   player: NetPlayer;
@@ -54,6 +59,7 @@ const PlayerRow = ({ player, canKick, onKick }: {
 
 export const LanScreen: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<Nav>();
   const activeCampaign = useAppSelector((s) =>
     s.campaign.campaigns.find((c) => c.id === s.campaign.activeCampaignId) ?? null
   );
@@ -92,6 +98,17 @@ export const LanScreen: React.FC = () => {
   const lan = useLan();
   const [playerName, setPlayerName] = useState('');
   const [joinCode, setJoinCode] = useState('');
+  const [manualIp, setManualIp] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const handleLeave = useCallback(() => {
+    lan.leave();
+    if (isSetupGate) {
+      dispatch(setAppMode(null));
+    } else {
+      navigation.goBack();
+    }
+  }, [lan.leave, isSetupGate, dispatch, navigation]);
 
   useEffect(() => {
     if (character && !playerName) setPlayerName(character.name);
@@ -182,7 +199,8 @@ export const LanScreen: React.FC = () => {
             <Text style={styles.codeLabel}>CODE D'INVITATION</Text>
             <Text style={styles.codeValue}>{lan.code}</Text>
             <Text style={styles.codeHint}>
-              Les joueurs entrent ce code pour rejoindre. Tout le monde doit être sur le même Wi-Fi.
+              Les joueurs entrent ce code pour rejoindre. Tout le monde doit être sur le même réseau
+              (votre Wi-Fi, ou le point d'accès Wi-Fi de ce téléphone si vous utilisez le partage de connexion).
             </Text>
             <Text style={styles.ipHint}>IP de l'hôte : {lan.hostIp}</Text>
           </View>
@@ -197,7 +215,7 @@ export const LanScreen: React.FC = () => {
             <Text style={styles.waiting}>En attente de joueurs…</Text>
           )}
 
-          <Button label="Arrêter la partie" variant="danger" onPress={lan.leave} fullWidth style={{ marginTop: spacing.lg }} />
+          <Button label="Arrêter la partie" variant="danger" onPress={handleLeave} fullWidth style={{ marginTop: spacing.lg }} />
         </ScrollView>
         {renderGateFooter()}
       </View>
@@ -224,7 +242,7 @@ export const LanScreen: React.FC = () => {
             <PlayerRow key={p.peerId} player={p} canKick={false} onKick={() => {}} />
           ))}
 
-          <Button label="Quitter la partie" variant="danger" onPress={lan.leave} fullWidth style={{ marginTop: spacing.lg }} />
+          <Button label="Quitter la partie" variant="danger" onPress={handleLeave} fullWidth style={{ marginTop: spacing.lg }} />
         </ScrollView>
         {renderGateFooter()}
       </View>
@@ -239,7 +257,7 @@ export const LanScreen: React.FC = () => {
           <Text style={styles.bigIcon}>🚪</Text>
           <Text style={styles.infoTitle}>Vous avez été expulsé</Text>
           <Text style={styles.infoText}>Le MJ vous a retiré de la partie.</Text>
-          <Button label="Retour" onPress={lan.leave} style={{ marginTop: spacing.lg }} />
+          <Button label="Retour" onPress={handleLeave} style={{ marginTop: spacing.lg }} />
         </View>
         {renderGateFooter()}
       </View>
@@ -270,8 +288,32 @@ export const LanScreen: React.FC = () => {
           <Text style={styles.actionTitle}>Héberger (MJ)</Text>
           <Text style={styles.actionDesc}>
             Crée une partie sur ce téléphone et génère un code d'invitation. Les autres rejoignent et vous pouvez les expulser.
+            Fonctionne sur votre Wi-Fi habituel ou via le point d'accès Wi-Fi (hotspot) de ce téléphone.
           </Text>
-          <Button label="Héberger une partie" onPress={() => lan.host(playerName, snapshot)} fullWidth />
+          <Button
+            label="Héberger une partie"
+            onPress={() => lan.host(playerName, snapshot, manualIp.trim() || undefined)}
+            fullWidth
+          />
+          <TouchableOpacity onPress={() => setShowAdvanced((v) => !v)} style={styles.advancedToggle}>
+            <Text style={styles.advancedToggleText}>
+              {showAdvanced ? '▲ Masquer la configuration avancée' : '▼ L\'adresse détectée est incorrecte ?'}
+            </Text>
+          </TouchableOpacity>
+          {showAdvanced && (
+            <View style={styles.advancedBox}>
+              <Text style={styles.advancedHint}>
+                Si l'hébergement via point d'accès Wi-Fi échoue, indiquez ici l'adresse IP locale de ce
+                téléphone (visible dans les paramètres du point d'accès, souvent 192.168.43.1 sur Android).
+              </Text>
+              <Input
+                value={manualIp}
+                onChangeText={setManualIp}
+                placeholder="Ex : 192.168.43.1"
+                keyboardType="decimal-pad"
+              />
+            </View>
+          )}
         </View>
 
         {/* Rejoindre */}
@@ -296,7 +338,11 @@ export const LanScreen: React.FC = () => {
         </View>
 
         <Text style={styles.footNote}>
-          ℹ️ Le multijoueur LAN fonctionne uniquement entre appareils connectés au même réseau Wi-Fi. Certains réseaux publics ou partages de connexion bloquent ces communications.
+          ℹ️ Le multijoueur LAN nécessite que tous les appareils partagent le même réseau local : votre
+          Wi-Fi, ou le point d'accès Wi-Fi (hotspot) de l'hôte. Le réseau mobile (données cellulaires) de
+          chaque joueur séparément ne peut pas fonctionner : sans réseau partagé, les téléphones ne peuvent
+          pas se joindre directement entre eux (cela demanderait un serveur relais en ligne, que cette app
+          n'utilise pas pour garder vos parties 100% locales et gratuites).
         </Text>
         {renderGateFooter()}
       </ScrollView>
@@ -381,6 +427,10 @@ const styles = StyleSheet.create({
   actionIcon: { fontSize: 32, marginBottom: spacing.sm },
   actionTitle: { ...typography.h4, color: colors.text, marginBottom: 4 },
   actionDesc: { ...typography.bodySmall, color: colors.textMuted, lineHeight: 18, marginBottom: spacing.md },
+  advancedToggle: { marginTop: spacing.sm, alignItems: 'center' },
+  advancedToggleText: { ...typography.caption, color: colors.textSecondary, fontWeight: '600' },
+  advancedBox: { marginTop: spacing.sm },
+  advancedHint: { ...typography.caption, color: colors.textMuted, lineHeight: 16, marginBottom: spacing.sm },
   codeInput: { fontSize: 20, letterSpacing: 4, fontWeight: '800', textAlign: 'center' },
   errorBox: {
     backgroundColor: colors.error + '22', borderRadius: borderRadius.md, padding: spacing.md,

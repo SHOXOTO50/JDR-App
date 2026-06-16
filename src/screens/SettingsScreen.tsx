@@ -153,16 +153,17 @@ export const SettingsScreen: React.FC = () => {
 
       <SectionTitle title="À propos" />
       <View style={styles.section}>
-        <SettingRow icon="🎲" title="JDR App" value="v1.0.0" />
+        <SettingRow icon="🎲" title="DiceQuest" value="v1.2.3" />
         <SettingRow icon="⚔️" title="Compatible" subtitle="D&D 5e, Pathfinder, Warhammer et plus" />
         <SettingRow icon="🌙" title="Thème" subtitle="Mode sombre fantasy médiéval" />
         <SettingRow icon="💾" title="Stockage" subtitle="Sauvegarde locale automatique" />
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>⚔️ JDR App</Text>
-        <Text style={styles.footerSub}>Aventures sans Limites</Text>
-        <Text style={styles.footerVersion}>Version 1.0.0</Text>
+        <Text style={styles.footerText}>⚔️ DiceQuest</Text>
+        <Text style={styles.footerSub}>Version 1.2.3</Text>
+        <Text style={styles.footerVersion}>Créé par SHOXOTO</Text>
+        <Text style={styles.footerLove}>Créé avec ❤️ pour les aventuriers et les passionnés de D&D</Text>
       </View>
     </ScrollView>
   );
@@ -222,5 +223,6 @@ const styles = StyleSheet.create({
   footer: { alignItems: 'center', paddingVertical: spacing.xl },
   footerText: { fontSize: 28, fontWeight: '900', color: colors.primary, letterSpacing: 3 },
   footerSub: { ...typography.body, color: colors.textMuted, letterSpacing: 2, marginTop: 4 },
-  footerVersion: { ...typography.caption, color: colors.textMuted, marginTop: spacing.sm },
+  footerVersion: { ...typography.caption, color: colors.primary, fontWeight: '700', marginTop: spacing.sm },
+  footerLove: { ...typography.caption, color: colors.textMuted, marginTop: 4, textAlign: 'center' },
 });

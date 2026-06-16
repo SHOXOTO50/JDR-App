@@ -89,14 +89,16 @@ export const useLanSession = () => {
     if (changed) broadcastRoster();
   }, [broadcastRoster]);
 
-  const host = useCallback(async (playerName: string, character: CharacterSnapshot | null) => {
+  const host = useCallback(async (playerName: string, character: CharacterSnapshot | null, manualIp?: string) => {
     if (!available) { setErrorMsg("Le module réseau n'est pas disponible dans cette version."); setMode('error'); return; }
     setErrorMsg('');
     try {
-      let ip = '';
-      try { ip = await Network.getIpAddressAsync(); } catch {}
-      if (!ip || ip === '0.0.0.0') {
-        setErrorMsg("Impossible de récupérer l'adresse IP locale. Vérifiez que le Wi-Fi est activé.");
+      let ip = manualIp || '';
+      if (!ip) {
+        try { ip = await Network.getIpAddressAsync(); } catch {}
+      }
+      if (!ip || ip === '0.0.0.0' || !encodeCode(ip)) {
+        setErrorMsg("Impossible de récupérer l'adresse IP locale. Vérifiez que le Wi-Fi (ou le point d'accès) est activé, ou indiquez l'adresse IP manuellement.");
         setMode('error');
         return;
       }

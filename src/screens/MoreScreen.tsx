@@ -205,7 +205,9 @@ export const MoreScreen: React.FC = () => {
         onPress={handleSwitchCampaign}
       />
 
-      <Text style={styles.version}>JDR App v1.2.2 · Fait avec ❤️ pour les aventuriers</Text>
+      <Text style={styles.version}>DiceQuest v1.2.3</Text>
+      <Text style={styles.versionAuthor}>Créé par SHOXOTO</Text>
+      <Text style={styles.versionLove}>Créé avec ❤️ pour les aventuriers et les passionnés de D&D</Text>
     </ScrollView>
   );
 };
@@ -267,5 +269,18 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xl,
+  },
+  versionAuthor: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  versionLove: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 2,
   },
 });

@@ -11,6 +11,7 @@ import {
 import { GameMap, MapMarker } from '../types';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { generateId } from '../utils/helpers';
+import { MAP_PRESETS, MapPreset, resolvePresetUri } from '../data/mapPresets';
 import { Modal } from '../components/common/Modal';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
@@ -33,6 +34,7 @@ export const MapScreen: React.FC = () => {
   const [markerModal, setMarkerModal] = useState(false);
   const [editingMarker, setEditingMarker] = useState<MapMarker | null>(null);
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number } | null>(null);
+  const [newMapModal, setNewMapModal] = useState(false);
 
   const selectedMap = maps.find((m) => m.id === selectedMapId) ?? maps[0] ?? null;
 
@@ -58,6 +60,22 @@ export const MapScreen: React.FC = () => {
     };
     dispatch(addMap(newMap));
     setSelectedMapId(newMap.id);
+    setNewMapModal(false);
+  };
+
+  const pickPreset = (preset: MapPreset) => {
+    if (!activeCampaignId) return;
+    const newMap: GameMap = {
+      id: generateId(),
+      campaignId: activeCampaignId,
+      name: preset.name,
+      imageUri: resolvePresetUri(preset.source),
+      markers: [],
+      createdAt: new Date().toISOString(),
+    };
+    dispatch(addMap(newMap));
+    setSelectedMapId(newMap.id);
+    setNewMapModal(false);
   };
 
   const handleImagePress = (e: any) => {
@@ -110,6 +128,26 @@ export const MapScreen: React.FC = () => {
     setImgSize({ width, height });
   };
 
+  const renderNewMapModal = () => (
+    <Modal visible={newMapModal} onClose={() => setNewMapModal(false)} title="Nouvelle carte">
+      <Button label="📷 Importer une photo" onPress={pickImage} fullWidth />
+      <Text style={styles.presetsLabel}>Ou choisissez un modèle</Text>
+      <View style={styles.presetsGrid}>
+        {MAP_PRESETS.map((preset) => (
+          <TouchableOpacity
+            key={preset.id}
+            onPress={() => pickPreset(preset)}
+            style={styles.presetCard}
+            activeOpacity={0.8}
+          >
+            <Image source={preset.source} style={styles.presetThumb} resizeMode="cover" />
+            <Text style={styles.presetName} numberOfLines={2}>{preset.icon} {preset.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </Modal>
+  );
+
   if (maps.length === 0) {
     return (
       <View style={styles.container}>
@@ -120,10 +158,11 @@ export const MapScreen: React.FC = () => {
         <EmptyState
           icon="🗺️"
           title="Aucune carte"
-          subtitle="Importez une image (plan de donjon, carte du monde...) et placez des marqueurs dessus."
-          actionLabel="Importer une carte"
-          onAction={pickImage}
+          subtitle="Importez une image ou choisissez un modèle de donjon/ville et placez des marqueurs dessus."
+          actionLabel="Ajouter une carte"
+          onAction={() => setNewMapModal(true)}
         />
+        {renderNewMapModal()}
       </View>
     );
   }
@@ -153,7 +192,7 @@ export const MapScreen: React.FC = () => {
           </TouchableOpacity>
         )}
         ListFooterComponent={
-          <TouchableOpacity onPress={pickImage} style={styles.addMapTab}>
+          <TouchableOpacity onPress={() => setNewMapModal(true)} style={styles.addMapTab}>
             <Text style={styles.addMapText}>+ Carte</Text>
           </TouchableOpacity>
         }
@@ -249,6 +288,8 @@ export const MapScreen: React.FC = () => {
           </>
         )}
       </Modal>
+
+      {renderNewMapModal()}
     </View>
   );
 };
@@ -298,6 +339,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error + '22', borderWidth: 1, borderColor: colors.error,
   },
   toolBtnDangerText: { fontSize: 18 },
+  presetsLabel: {
+    ...typography.label, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1,
+    marginTop: spacing.lg, marginBottom: spacing.sm, textAlign: 'center',
+  },
+  presetsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'space-between' },
+  presetCard: {
+    width: '48%', backgroundColor: colors.card, borderRadius: borderRadius.lg, overflow: 'hidden',
+    borderWidth: 1, borderColor: colors.border, marginBottom: spacing.sm,
+  },
+  presetThumb: { width: '100%', aspectRatio: 1, backgroundColor: colors.surface },
+  presetName: { ...typography.bodySmall, color: colors.textSecondary, fontWeight: '600', padding: spacing.sm },
   fieldLabel: { ...typography.label, color: colors.textSecondary, textTransform: 'uppercase', marginBottom: 8, marginTop: 4 },
   iconRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.md },
   iconChip: {
