@@ -5,6 +5,14 @@
 
 export const LAN_PORT = 47820;
 
+export interface InventorySnapshot {
+  id: string;
+  name: string;
+  quantity: number;
+  category: string;
+  equipped: boolean;
+}
+
 export interface CharacterSnapshot {
   id: string;
   name: string;
@@ -14,6 +22,7 @@ export interface CharacterSnapshot {
   maxHP: number;
   armorClass: number;
   conditions: string[];
+  inventory: InventorySnapshot[];
 }
 
 export interface NetPlayer {

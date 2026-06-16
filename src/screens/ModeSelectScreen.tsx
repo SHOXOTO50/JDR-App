@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, SafeAreaView,
 } from 'react-native';
@@ -7,6 +7,7 @@ import { useAppSelector, useAppDispatch } from '../store';
 import { setAppMode, AppMode } from '../store/slices/appModeSlice';
 import { selectCharacter } from '../store/slices/charactersSlice';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
+import { useBackHandler } from '../hooks/useBackHandler';
 
 const MODES: {
   mode: AppMode;
@@ -44,6 +45,11 @@ export const ModeSelectScreen: React.FC = () => {
     const id = s.characters.currentCharacterId;
     return id ? s.characters.characters.find((c) => c.id === id) : null;
   });
+
+  useBackHandler(useCallback(() => {
+    dispatch(selectCharacter(null));
+    return true;
+  }, [dispatch]));
 
   return (
     <View style={styles.container}>

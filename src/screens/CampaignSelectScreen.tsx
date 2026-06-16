@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, StatusBar, SafeAreaView,
 } from 'react-native';
@@ -16,6 +16,7 @@ import { generateId, formatDate } from '../utils/helpers';
 import { Modal } from '../components/common/Modal';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
+import { useBackHandler } from '../hooks/useBackHandler';
 
 const SYSTEMS = ['D&D 5e', 'Pathfinder', 'Pathfinder 2e', 'Warhammer', 'Call of Cthulhu', 'Personnalisé'];
 
@@ -48,6 +49,11 @@ export const CampaignSelectScreen: React.FC = () => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [draft, setDraft] = useState<Campaign>(makeCampaign());
+
+  useBackHandler(useCallback(() => {
+    dispatch(setAppMode(null));
+    return true;
+  }, [dispatch]));
 
   const openCreate = () => {
     setDraft(makeCampaign());

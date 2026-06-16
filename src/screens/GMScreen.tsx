@@ -10,10 +10,12 @@ import {
   addLocation, updateLocation, deleteLocation,
 } from '../store/slices/gmSlice';
 import { setCampaignGMNotes } from '../store/slices/campaignSlice';
+import { useLan } from '../net/LanContext';
+import { NetPlayer } from '../net/lanProtocol';
 import { NPC, Monster, Faction, Location, NPCDisposition, LocationType } from '../types';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import {
-  generateId, getDispositionColor, getDispositionLabel, getLocationTypeLabel,
+  generateId, getDispositionColor, getDispositionLabel, getLocationTypeLabel, getHPColor,
 } from '../utils/helpers';
 import { Modal } from '../components/common/Modal';
 import { Input } from '../components/common/Input';
@@ -22,7 +24,7 @@ import { FAB } from '../components/common/FAB';
 import { EmptyState } from '../components/common/EmptyState';
 import { Badge } from '../components/common/Badge';
 
-type GMTab = 'npcs' | 'monsters' | 'factions' | 'locations' | 'notes';
+type GMTab = 'npcs' | 'monsters' | 'factions' | 'locations' | 'notes' | 'group';
 
 const TABS: { key: GMTab; label: string; icon: string }[] = [
   { key: 'npcs', label: 'PNJ', icon: '👤' },
@@ -31,6 +33,63 @@ const TABS: { key: GMTab; label: string; icon: string }[] = [
   { key: 'locations', label: 'Lieux', icon: '🏰' },
   { key: 'notes', label: 'Notes MJ', icon: '📝' },
 ];
+
+const GROUP_TAB: { key: GMTab; label: string; icon: string } = { key: 'group', label: 'Groupe', icon: '👥' };
+
+const GroupOverview = ({ roster }: { roster: NetPlayer[] }) => {
+  const players = roster.filter((p) => !p.isGM);
+  if (players.length === 0) {
+    return (
+      <EmptyState
+        icon="👥"
+        title="Aucun joueur connecté"
+        subtitle="Les joueurs connectés à votre partie LAN apparaîtront ici, avec leur fiche et leur inventaire."
+      />
+    );
+  }
+  return (
+    <FlatList
+      data={players}
+      keyExtractor={(p) => p.peerId}
+      contentContainerStyle={styles.list}
+      showsVerticalScrollIndicator={false}
+      renderItem={({ item }) => {
+        const c = item.character;
+        return (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>{item.playerName}</Text>
+                <Text style={styles.cardSubtitle}>
+                  {c ? `${c.name} · ${c.characterClass} Niv.${c.level}` : 'Aucun personnage'}
+                </Text>
+              </View>
+              {c && (
+                <Text style={[styles.groupHP, { color: getHPColor(c.currentHP, c.maxHP) }]}>
+                  ❤️ {c.currentHP}/{c.maxHP}
+                </Text>
+              )}
+            </View>
+            {c && (
+              <Text style={styles.cardMeta}>🛡️ CA {c.armorClass}{c.conditions.length > 0 ? ` · ⚠️ ${c.conditions.join(', ')}` : ''}</Text>
+            )}
+            {c && c.inventory.length > 0 ? (
+              <View style={styles.groupInventory}>
+                {c.inventory.map((it) => (
+                  <Text key={it.id} style={styles.groupItem}>
+                    {it.equipped ? '🟢' : '⚪'} {it.name}{it.quantity > 1 ? ` ×${it.quantity}` : ''}
+                  </Text>
+                ))}
+              </View>
+            ) : c && (
+              <Text style={styles.cardDesc}>Inventaire vide</Text>
+            )}
+          </View>
+        );
+      }}
+    />
+  );
+};
 
 const DISPOSITIONS: NPCDisposition[] = ['amical', 'neutre', 'hostile'];
 const LOCATION_TYPES: LocationType[] = ['ville', 'donjon', 'village', 'royaume', 'foret', 'autre'];
@@ -126,11 +185,15 @@ const LocationCard = ({ location, onPress }: { location: Location; onPress: () =
 
 export const GMScreen: React.FC = () => {
   const dispatch = useAppDispatch();
+  const lan = useLan();
   const gm = useAppSelector((s) => s.gm);
   const activeCampaignId = useAppSelector((s) => s.campaign.activeCampaignId);
   const activeCampaign = useAppSelector((s) =>
     s.campaign.campaigns.find((c) => c.id === s.campaign.activeCampaignId) ?? null
   );
+
+  const showGroupTab = lan.mode === 'hosting';
+  const visibleTabs = showGroupTab ? [...TABS, GROUP_TAB] : TABS;
 
   // GM content scoped to the active campaign
   const npcs = gm.npcs.filter((n) => n.campaignId === activeCampaignId);
@@ -312,7 +375,7 @@ export const GMScreen: React.FC = () => {
 
       {/* Tabs */}
       <FlatList
-        data={TABS}
+        data={visibleTabs}
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(t) => t.key}
@@ -324,7 +387,7 @@ export const GMScreen: React.FC = () => {
           >
             <Text style={styles.gmTabIcon}>{t.icon}</Text>
             <Text style={[styles.gmTabText, activeTab === t.key && styles.gmTabTextActive]}>{t.label}</Text>
-            {t.key !== 'notes' && (
+            {t.key !== 'notes' && t.key !== 'group' && (
               <View style={styles.gmTabBadge}>
                 <Text style={styles.gmTabBadgeText}>{(data[t.key] ?? []).length}</Text>
               </View>
@@ -333,7 +396,9 @@ export const GMScreen: React.FC = () => {
         )}
       />
 
-      {activeTab === 'notes' ? (
+      {activeTab === 'group' ? (
+        <GroupOverview roster={lan.roster} />
+      ) : activeTab === 'notes' ? (
         <View style={styles.notesContainer}>
           <Text style={styles.notesHint}>
             Notes privées du Maître du Jeu pour « {activeCampaign?.name ?? '—'} ». Intrigues, secrets, rebondissements...
@@ -432,6 +497,9 @@ const styles = StyleSheet.create({
   cardSubtitle: { ...typography.bodySmall, color: colors.textSecondary },
   cardDesc: { ...typography.bodySmall, color: colors.textMuted, marginTop: 6, lineHeight: 18 },
   cardMeta: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 4 },
+  groupHP: { ...typography.bodySmall, fontWeight: '700' },
+  groupInventory: { marginTop: spacing.sm, gap: 2 },
+  groupItem: { ...typography.bodySmall, color: colors.textSecondary },
   crBadge: {
     width: 44, height: 44, borderRadius: borderRadius.round,
     backgroundColor: colors.error + '22', borderWidth: 1, borderColor: colors.error,

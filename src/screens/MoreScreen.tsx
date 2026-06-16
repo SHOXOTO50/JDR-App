@@ -8,6 +8,7 @@ import { useAppSelector, useAppDispatch } from '../store';
 import { selectCharacter } from '../store/slices/charactersSlice';
 import { setActiveCampaign } from '../store/slices/campaignSlice';
 import { setAppMode } from '../store/slices/appModeSlice';
+import { useLan } from '../net/LanContext';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -41,6 +42,8 @@ const MenuCard = ({
 export const MoreScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const dispatch = useAppDispatch();
+  const lan = useLan();
+  const isLanClient = lan.mode === 'connected';
   const character = useAppSelector((s) => {
     const id = s.characters.currentCharacterId;
     return id ? s.characters.characters.find((c) => c.id === id) : null;
@@ -133,13 +136,15 @@ export const MoreScreen: React.FC = () => {
         color={colors.primary}
         onPress={() => navigation.navigate('Quests')}
       />
-      <MenuCard
-        icon="🏰"
-        title="Mode Maître du Jeu"
-        subtitle="PNJ, monstres, factions, lieux"
-        color={colors.secondary}
-        onPress={() => navigation.navigate('GM')}
-      />
+      {!isLanClient && (
+        <MenuCard
+          icon="🏰"
+          title="Mode Maître du Jeu"
+          subtitle="PNJ, monstres, factions, lieux"
+          color={colors.secondary}
+          onPress={() => navigation.navigate('GM')}
+        />
+      )}
       <MenuCard
         icon="🗺️"
         title="Campagnes"
@@ -200,7 +205,7 @@ export const MoreScreen: React.FC = () => {
         onPress={handleSwitchCampaign}
       />
 
-      <Text style={styles.version}>JDR App v1.2.1 · Fait avec ❤️ pour les aventuriers</Text>
+      <Text style={styles.version}>JDR App v1.2.2 · Fait avec ❤️ pour les aventuriers</Text>
     </ScrollView>
   );
 };

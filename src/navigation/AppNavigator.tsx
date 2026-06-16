@@ -1,7 +1,9 @@
 import React from 'react';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAppSelector } from '../store';
+import { useAppSelector, useAppDispatch } from '../store';
+import { setAppMode } from '../store/slices/appModeSlice';
 import { MainTabNavigator } from './MainTabNavigator';
 import { CharacterSelectScreen } from '../screens/CharacterSelectScreen';
 import { CampaignSelectScreen } from '../screens/CampaignSelectScreen';
@@ -34,6 +36,20 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const GateBackButton: React.FC = () => {
+  const dispatch = useAppDispatch();
+  return (
+    <TouchableOpacity onPress={() => dispatch(setAppMode(null))} style={gateStyles.backButton}>
+      <Text style={gateStyles.backButtonText}>⟵</Text>
+    </TouchableOpacity>
+  );
+};
+
+const gateStyles = StyleSheet.create({
+  backButton: { paddingHorizontal: 4, paddingVertical: 4 },
+  backButtonText: { color: colors.primary, fontSize: 22, fontWeight: '700' },
+});
 
 export const AppNavigator: React.FC = () => {
   const currentCharacterId = useAppSelector((s) => s.characters.currentCharacterId);
@@ -74,9 +90,17 @@ export const AppNavigator: React.FC = () => {
     // Step 3: multiplayer modes set up their group/connection before picking a campaign
     if ((mode === 'local' || mode === 'passplay') && !groupReady) {
       return mode === 'local' ? (
-        <Stack.Screen name="Lan" component={LanScreen} options={{ title: 'Multijoueur Local (LAN)' }} />
+        <Stack.Screen
+          name="Lan"
+          component={LanScreen}
+          options={{ title: 'Multijoueur Local (LAN)', headerLeft: () => <GateBackButton /> }}
+        />
       ) : (
-        <Stack.Screen name="Multiplayer" component={MultiplayerScreen} options={{ title: 'Pass-and-Play' }} />
+        <Stack.Screen
+          name="Multiplayer"
+          component={MultiplayerScreen}
+          options={{ title: 'Pass-and-Play', headerLeft: () => <GateBackButton /> }}
+        />
       );
     }
 

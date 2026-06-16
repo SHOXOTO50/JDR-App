@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppSelector, useAppDispatch } from '../store';
 import { addPlayer, updatePlayer, deletePlayer } from '../store/slices/playersSlice';
 import { selectCharacter } from '../store/slices/charactersSlice';
@@ -14,11 +16,16 @@ import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { FAB } from '../components/common/FAB';
 import { EmptyState } from '../components/common/EmptyState';
+import { useBackHandler } from '../hooks/useBackHandler';
+import { RootStackParamList } from '../navigation/AppNavigator';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const PLAYER_COLORS = [colors.primary, colors.secondary, colors.success, colors.error, colors.mana, colors.warning];
 
 export const MultiplayerScreen: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<Nav>();
   const activeCampaignId = useAppSelector((s) => s.campaign.activeCampaignId);
   const activeCampaign = useAppSelector((s) =>
     s.campaign.campaigns.find((c) => c.id === s.campaign.activeCampaignId) ?? null
@@ -29,6 +36,14 @@ export const MultiplayerScreen: React.FC = () => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<Player | null>(null);
+
+  const isSetupGate = !activeCampaignId;
+
+  useBackHandler(useCallback(() => {
+    if (!isSetupGate) return false;
+    dispatch(setAppMode(null));
+    return true;
+  }, [dispatch, isSetupGate]));
 
   const charById = (id?: string): Character | undefined => characters.find((c) => c.id === id);
 
@@ -71,10 +86,12 @@ export const MultiplayerScreen: React.FC = () => {
       return;
     }
     dispatch(selectCharacter(p.characterId));
-    Alert.alert('Au tour de ' + p.name, 'Le personnage actif est maintenant celui de ' + p.name + '. Passez le téléphone !');
+    if (isSetupGate) {
+      Alert.alert('Au tour de ' + p.name, 'Le personnage actif est maintenant celui de ' + p.name + '. Passez le téléphone !');
+      return;
+    }
+    navigation.navigate('Main');
   };
-
-  const isSetupGate = !activeCampaignId;
 
   return (
     <View style={styles.container}>

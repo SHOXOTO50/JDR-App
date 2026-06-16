@@ -1,15 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
 } from 'react-native';
 import { useAppSelector, useAppDispatch } from '../store';
-import { useLanSession } from '../net/useLanSession';
+import { useLan } from '../net/LanContext';
 import { CharacterSnapshot, NetPlayer } from '../net/lanProtocol';
 import { setAppMode, setGroupReady } from '../store/slices/appModeSlice';
+import { selectCharacter } from '../store/slices/charactersSlice';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { getHPColor } from '../utils/helpers';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
+import { useBackHandler } from '../hooks/useBackHandler';
 
 const PlayerRow = ({ player, canKick, onKick }: {
   player: NetPlayer;
@@ -56,9 +58,21 @@ export const LanScreen: React.FC = () => {
     s.campaign.campaigns.find((c) => c.id === s.campaign.activeCampaignId) ?? null
   );
   const isSetupGate = !activeCampaign;
+
+  useBackHandler(useCallback(() => {
+    if (!isSetupGate) return false;
+    dispatch(setAppMode(null));
+    return true;
+  }, [dispatch, isSetupGate]));
+
   const character = useAppSelector((s) => {
     const id = s.characters.currentCharacterId;
     return id ? s.characters.characters.find((c) => c.id === id) : null;
+  });
+  const characters = useAppSelector((s) => s.characters.characters);
+  const inventoryItems = useAppSelector((s) => {
+    const id = s.characters.currentCharacterId;
+    return id ? s.inventory.items.filter((i) => i.characterId === id) : [];
   });
 
   const snapshot: CharacterSnapshot | null = useMemo(() => character ? {
@@ -70,9 +84,12 @@ export const LanScreen: React.FC = () => {
     maxHP: character.maxHP,
     armorClass: character.armorClass,
     conditions: [],
-  } : null, [character]);
+    inventory: inventoryItems.map((i) => ({
+      id: i.id, name: i.name, quantity: i.quantity, category: i.category, equipped: i.equipped,
+    })),
+  } : null, [character, inventoryItems]);
 
-  const lan = useLanSession();
+  const lan = useLan();
   const [playerName, setPlayerName] = useState('');
   const [joinCode, setJoinCode] = useState('');
 
@@ -81,13 +98,13 @@ export const LanScreen: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character]);
 
-  // Diffuse les changements de PV/CA en direct
+  // Diffuse la fiche (PV/CA/personnage/inventaire) en direct
   useEffect(() => {
     if (lan.mode === 'hosting' || lan.mode === 'connected') {
       lan.pushUpdate(snapshot);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [snapshot?.currentHP, snapshot?.maxHP, snapshot?.armorClass, lan.mode]);
+  }, [snapshot, lan.mode]);
 
   const confirmKick = (p: NetPlayer) => {
     Alert.alert('Expulser', `Expulser ${p.playerName} de la partie ?`, [
@@ -100,6 +117,29 @@ export const LanScreen: React.FC = () => {
     <View style={styles.banner}>
       <Text style={styles.bannerLabel}>PARTIE EN RÉSEAU · CAMPAGNE</Text>
       <Text style={styles.bannerName} numberOfLines={1}>🗺️ {activeCampaign?.name ?? '—'}</Text>
+    </View>
+  );
+
+  const renderCharacterPicker = () => (
+    <View style={styles.charPickerCard}>
+      <Text style={styles.sectionTitle}>Votre personnage</Text>
+      {characters.length === 0 ? (
+        <Text style={styles.noChar}>Aucun personnage disponible.</Text>
+      ) : (
+        <View style={styles.charPickerRow}>
+          {characters.map((c) => (
+            <TouchableOpacity
+              key={c.id}
+              onPress={() => dispatch(selectCharacter(c.id))}
+              style={[styles.charChip, c.id === character?.id && styles.charChipActive]}
+            >
+              <Text style={[styles.charChipText, c.id === character?.id && styles.charChipTextActive]}>
+                {c.name} · Niv.{c.level}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
     </View>
   );
 
@@ -147,6 +187,8 @@ export const LanScreen: React.FC = () => {
             <Text style={styles.ipHint}>IP de l'hôte : {lan.hostIp}</Text>
           </View>
 
+          {renderCharacterPicker()}
+
           <Text style={styles.sectionTitle}>Joueurs connectés ({lan.roster.length})</Text>
           {lan.roster.map((p) => (
             <PlayerRow key={p.peerId} player={p} canKick onKick={() => confirmKick(p)} />
@@ -174,6 +216,8 @@ export const LanScreen: React.FC = () => {
             </Text>
             <Text style={styles.ipHint}>Hôte : {lan.hostIp}</Text>
           </View>
+
+          {renderCharacterPicker()}
 
           <Text style={styles.sectionTitle}>Groupe ({lan.roster.length})</Text>
           {lan.roster.map((p) => (
@@ -285,6 +329,18 @@ const styles = StyleSheet.create({
     ...typography.label, color: colors.primary, textTransform: 'uppercase', letterSpacing: 1.2,
     marginBottom: spacing.sm, marginTop: spacing.sm,
   },
+  charPickerCard: {
+    backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md,
+    borderWidth: 1, borderColor: colors.border, marginBottom: spacing.md, ...shadows.small,
+  },
+  charPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  charChip: {
+    paddingHorizontal: 14, paddingVertical: 7, borderRadius: borderRadius.round,
+    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceVariant,
+  },
+  charChipActive: { borderColor: colors.primary, backgroundColor: colors.primaryDark + '33' },
+  charChipText: { ...typography.bodySmall, color: colors.textMuted, fontWeight: '600' },
+  charChipTextActive: { color: colors.primary },
   playerRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md,

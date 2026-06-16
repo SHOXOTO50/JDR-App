@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { store, persistor } from './src/store';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { LanProvider } from './src/net/LanContext';
 import { colors } from './src/theme';
 
 const LoadingFallback = () => (
@@ -22,7 +23,9 @@ export default function App() {
         <Provider store={store}>
           <PersistGate loading={<LoadingFallback />} persistor={persistor}>
             <StatusBar style="light" backgroundColor={colors.background} />
-            <AppNavigator />
+            <LanProvider>
+              <AppNavigator />
+            </LanProvider>
           </PersistGate>
         </Provider>
       </SafeAreaProvider>
