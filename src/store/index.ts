@@ -11,6 +11,8 @@ import combatReducer from './slices/combatSlice';
 import gmReducer from './slices/gmSlice';
 import campaignReducer from './slices/campaignSlice';
 import diceReducer from './slices/diceSlice';
+import mapsReducer from './slices/mapsSlice';
+import playersReducer from './slices/playersSlice';
 
 const rootReducer = combineReducers({
   characters: charactersReducer,
@@ -21,12 +23,14 @@ const rootReducer = combineReducers({
   gm: gmReducer,
   campaign: campaignReducer,
   dice: diceReducer,
+  maps: mapsReducer,
+  players: playersReducer,
 });
 
 const persistConfig = {
   key: 'jdr-app-root',
   storage: AsyncStorage,
-  whitelist: ['characters', 'inventory', 'notes', 'quests', 'gm', 'campaign', 'dice'],
+  whitelist: ['characters', 'inventory', 'notes', 'quests', 'gm', 'campaign', 'dice', 'maps', 'players'],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

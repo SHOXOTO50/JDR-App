@@ -217,6 +217,7 @@ export interface Faction {
   notes: string;
   symbol?: string;
   goals?: string;
+  campaignId?: string;
   createdAt: string;
 }
 
@@ -251,6 +252,7 @@ export interface Campaign {
   description: string;
   system: string;
   gmName?: string;
+  gmNotes?: string;
   players: string[];
   characterIds: string[];
   sessionCount: number;
@@ -261,6 +263,34 @@ export interface Campaign {
   inviteCode?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Player {
+  id: string;
+  campaignId: string;
+  name: string;
+  characterId?: string;
+  color: string;
+  isGM: boolean;
+  createdAt: string;
+}
+
+export interface MapMarker {
+  id: string;
+  x: number;
+  y: number;
+  label: string;
+  color: string;
+  icon: string;
+}
+
+export interface GameMap {
+  id: string;
+  campaignId: string;
+  name: string;
+  imageUri: string;
+  markers: MapMarker[];
+  createdAt: string;
 }
 
 export interface DiceRoll {

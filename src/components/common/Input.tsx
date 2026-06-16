@@ -33,7 +33,7 @@ export const Input: React.FC<InputProps> = ({
         style={[
           styles.input,
           multiline && { height: (numberOfLines ?? 3) * 22, textAlignVertical: 'top' },
-          error && styles.inputError,
+          error ? styles.inputError : null,
           style,
         ]}
         placeholderTextColor={colors.textMuted}

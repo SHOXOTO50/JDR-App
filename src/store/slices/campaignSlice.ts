@@ -31,6 +31,13 @@ const campaignSlice = createSlice({
     setActiveCampaign(state, action: PayloadAction<string | null>) {
       state.activeCampaignId = action.payload;
     },
+    setCampaignGMNotes(state, action: PayloadAction<{ campaignId: string; notes: string }>) {
+      const campaign = state.campaigns.find((c) => c.id === action.payload.campaignId);
+      if (campaign) {
+        campaign.gmNotes = action.payload.notes;
+        campaign.updatedAt = new Date().toISOString();
+      }
+    },
     addSession(state, action: PayloadAction<{ campaignId: string; session: CampaignSession }>) {
       const campaign = state.campaigns.find((c) => c.id === action.payload.campaignId);
       if (campaign) {
@@ -73,6 +80,7 @@ export const {
   updateCampaign,
   deleteCampaign,
   setActiveCampaign,
+  setCampaignGMNotes,
   addSession,
   updateSession,
   deleteSession,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ScrollView,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, Alert,
 } from 'react-native';
 import { useAppSelector, useAppDispatch } from '../store';
 import {
@@ -9,10 +9,11 @@ import {
   addFaction, updateFaction, deleteFaction, updateFactionReputation,
   addLocation, updateLocation, deleteLocation,
 } from '../store/slices/gmSlice';
+import { setCampaignGMNotes } from '../store/slices/campaignSlice';
 import { NPC, Monster, Faction, Location, NPCDisposition, LocationType } from '../types';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import {
-  generateId, formatDate, getDispositionColor, getDispositionLabel, getLocationTypeLabel,
+  generateId, getDispositionColor, getDispositionLabel, getLocationTypeLabel,
 } from '../utils/helpers';
 import { Modal } from '../components/common/Modal';
 import { Input } from '../components/common/Input';
@@ -21,13 +22,14 @@ import { FAB } from '../components/common/FAB';
 import { EmptyState } from '../components/common/EmptyState';
 import { Badge } from '../components/common/Badge';
 
-type GMTab = 'npcs' | 'monsters' | 'factions' | 'locations';
+type GMTab = 'npcs' | 'monsters' | 'factions' | 'locations' | 'notes';
 
 const TABS: { key: GMTab; label: string; icon: string }[] = [
   { key: 'npcs', label: 'PNJ', icon: '👤' },
   { key: 'monsters', label: 'Monstres', icon: '👹' },
   { key: 'factions', label: 'Factions', icon: '⚑' },
   { key: 'locations', label: 'Lieux', icon: '🏰' },
+  { key: 'notes', label: 'Notes MJ', icon: '📝' },
 ];
 
 const DISPOSITIONS: NPCDisposition[] = ['amical', 'neutre', 'hostile'];
@@ -124,33 +126,48 @@ const LocationCard = ({ location, onPress }: { location: Location; onPress: () =
 
 export const GMScreen: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { npcs, monsters, factions, locations } = useAppSelector((s) => s.gm);
+  const gm = useAppSelector((s) => s.gm);
+  const activeCampaignId = useAppSelector((s) => s.campaign.activeCampaignId);
+  const activeCampaign = useAppSelector((s) =>
+    s.campaign.campaigns.find((c) => c.id === s.campaign.activeCampaignId) ?? null
+  );
+
+  // GM content scoped to the active campaign
+  const npcs = gm.npcs.filter((n) => n.campaignId === activeCampaignId);
+  const monsters = gm.monsters.filter((m) => m.campaignId === activeCampaignId);
+  const factions = gm.factions.filter((f) => f.campaignId === activeCampaignId);
+  const locations = gm.locations.filter((l) => l.campaignId === activeCampaignId);
 
   const [activeTab, setActiveTab] = useState<GMTab>('npcs');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [notesDraft, setNotesDraft] = useState(activeCampaign?.gmNotes ?? '');
 
   const defaultNPC = (): NPC => ({
     id: generateId(), name: '', race: '', role: '', description: '',
-    disposition: 'neutre', notes: '', createdAt: new Date().toISOString(),
+    disposition: 'neutre', notes: '', campaignId: activeCampaignId ?? undefined,
+    createdAt: new Date().toISOString(),
   });
 
   const defaultMonster = (): Monster => ({
     id: generateId(), name: '', type: '', cr: '1', hp: 10, ac: 10, speed: '9 m',
     stats: { FOR: 10, DEX: 10, CON: 10, INT: 10, SAG: 10, CHA: 10 },
-    attacks: [], description: '', createdAt: new Date().toISOString(),
+    attacks: [], description: '', campaignId: activeCampaignId ?? undefined,
+    createdAt: new Date().toISOString(),
   });
 
   const defaultFaction = (): Faction => ({
-    id: generateId(), name: '', description: '', reputation: 0, notes: '', createdAt: new Date().toISOString(),
+    id: generateId(), name: '', description: '', reputation: 0, notes: '',
+    campaignId: activeCampaignId ?? undefined, createdAt: new Date().toISOString(),
   });
 
   const defaultLocation = (): Location => ({
-    id: generateId(), name: '', type: 'ville', description: '', notes: '', createdAt: new Date().toISOString(),
+    id: generateId(), name: '', type: 'ville', description: '', notes: '',
+    campaignId: activeCampaignId ?? undefined, createdAt: new Date().toISOString(),
   });
 
   const openCreate = () => {
-    const defaults: Record<GMTab, () => any> = { npcs: defaultNPC, monsters: defaultMonster, factions: defaultFaction, locations: defaultLocation };
+    const defaults: Record<string, () => any> = { npcs: defaultNPC, monsters: defaultMonster, factions: defaultFaction, locations: defaultLocation };
     setEditingItem(defaults[activeTab]());
     setModalVisible(true);
   };
@@ -162,11 +179,10 @@ export const GMScreen: React.FC = () => {
 
   const handleSave = () => {
     if (!editingItem?.name?.trim()) { Alert.alert('Nom requis'); return; }
-    const isNew = !{
-      npcs: npcs, monsters: monsters, factions: factions, locations: locations,
-    }[activeTab].find((i: any) => i.id === editingItem.id);
+    const lists: Record<string, any[]> = { npcs, monsters, factions, locations };
+    const isNew = !lists[activeTab].find((i: any) => i.id === editingItem.id);
 
-    const actions: Record<GMTab, { add: any; update: any }> = {
+    const actions: Record<string, { add: any; update: any }> = {
       npcs: { add: addNPC, update: updateNPC },
       monsters: { add: addMonster, update: updateMonster },
       factions: { add: addFaction, update: updateFaction },
@@ -183,7 +199,7 @@ export const GMScreen: React.FC = () => {
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Supprimer', style: 'destructive', onPress: () => {
-          const delActions: Record<GMTab, any> = { npcs: deleteNPC, monsters: deleteMonster, factions: deleteFaction, locations: deleteLocation };
+          const delActions: Record<string, any> = { npcs: deleteNPC, monsters: deleteMonster, factions: deleteFaction, locations: deleteLocation };
           dispatch(delActions[activeTab](editingItem.id));
           setModalVisible(false);
           setEditingItem(null);
@@ -192,8 +208,14 @@ export const GMScreen: React.FC = () => {
     ]);
   };
 
-  const data: Record<GMTab, any[]> = { npcs, monsters, factions, locations };
-  const currentData = data[activeTab];
+  const handleSaveNotes = () => {
+    if (!activeCampaignId) return;
+    dispatch(setCampaignGMNotes({ campaignId: activeCampaignId, notes: notesDraft }));
+    Alert.alert('Notes enregistrées', 'Vos notes de MJ ont été sauvegardées.');
+  };
+
+  const data: Record<string, any[]> = { npcs, monsters, factions, locations };
+  const currentData = data[activeTab] ?? [];
 
   const renderNPCForm = () => editingItem && (
     <>
@@ -262,14 +284,14 @@ export const GMScreen: React.FC = () => {
     </>
   );
 
-  const forms: Record<GMTab, () => React.ReactNode> = {
+  const forms: Record<string, () => React.ReactNode> = {
     npcs: renderNPCForm,
     monsters: renderMonsterForm,
     factions: renderFactionForm,
     locations: renderLocationForm,
   };
 
-  const tabTitles: Record<GMTab, { create: string; edit: string }> = {
+  const tabTitles: Record<string, { create: string; edit: string }> = {
     npcs: { create: 'Nouveau PNJ', edit: 'Modifier PNJ' },
     monsters: { create: 'Nouveau Monstre', edit: 'Modifier Monstre' },
     factions: { create: 'Nouvelle Faction', edit: 'Modifier Faction' },
@@ -280,6 +302,14 @@ export const GMScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Active campaign banner */}
+      <View style={styles.campaignBanner}>
+        <Text style={styles.campaignBannerLabel}>CAMPAGNE ACTIVE</Text>
+        <Text style={styles.campaignBannerName} numberOfLines={1}>
+          🗺️ {activeCampaign?.name ?? 'Aucune campagne'}
+        </Text>
+      </View>
+
       {/* Tabs */}
       <FlatList
         data={TABS}
@@ -294,49 +324,69 @@ export const GMScreen: React.FC = () => {
           >
             <Text style={styles.gmTabIcon}>{t.icon}</Text>
             <Text style={[styles.gmTabText, activeTab === t.key && styles.gmTabTextActive]}>{t.label}</Text>
-            <View style={styles.gmTabBadge}>
-              <Text style={styles.gmTabBadgeText}>{data[t.key].length}</Text>
-            </View>
+            {t.key !== 'notes' && (
+              <View style={styles.gmTabBadge}>
+                <Text style={styles.gmTabBadgeText}>{(data[t.key] ?? []).length}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         )}
       />
 
-      <FlatList
-        data={currentData}
-        keyExtractor={(i) => i.id}
-        renderItem={({ item }) => {
-          if (activeTab === 'npcs') return <NPCCard npc={item} onPress={() => openEdit(item)} />;
-          if (activeTab === 'monsters') return <MonsterCard monster={item} onPress={() => openEdit(item)} />;
-          if (activeTab === 'factions') return (
-            <FactionCard
-              faction={item}
-              onPress={() => openEdit(item)}
-              onReputationChange={(delta) => dispatch(updateFactionReputation({ id: item.id, reputation: item.reputation + delta }))}
-            />
-          );
-          return <LocationCard location={item} onPress={() => openEdit(item)} />;
-        }}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <EmptyState
-            icon={TABS.find((t) => t.key === activeTab)?.icon ?? '📜'}
-            title={`Aucun ${activeTab === 'npcs' ? 'PNJ' : activeTab === 'monsters' ? 'monstre' : activeTab === 'factions' ? 'faction' : 'lieu'}`}
-            subtitle="Créez des éléments pour enrichir votre monde"
-            actionLabel="Créer"
-            onAction={openCreate}
+      {activeTab === 'notes' ? (
+        <View style={styles.notesContainer}>
+          <Text style={styles.notesHint}>
+            Notes privées du Maître du Jeu pour « {activeCampaign?.name ?? '—'} ». Intrigues, secrets, rebondissements...
+          </Text>
+          <Input
+            value={notesDraft}
+            onChangeText={setNotesDraft}
+            multiline
+            numberOfLines={14}
+            placeholder="Écrivez vos notes de campagne ici..."
+            containerStyle={{ flex: 0 }}
           />
-        }
-      />
-
-      <FAB onPress={openCreate} />
+          <Button label="Enregistrer les notes" onPress={handleSaveNotes} fullWidth />
+        </View>
+      ) : (
+        <>
+          <FlatList
+            data={currentData}
+            keyExtractor={(i) => i.id}
+            renderItem={({ item }) => {
+              if (activeTab === 'npcs') return <NPCCard npc={item} onPress={() => openEdit(item)} />;
+              if (activeTab === 'monsters') return <MonsterCard monster={item} onPress={() => openEdit(item)} />;
+              if (activeTab === 'factions') return (
+                <FactionCard
+                  faction={item}
+                  onPress={() => openEdit(item)}
+                  onReputationChange={(delta) => dispatch(updateFactionReputation({ id: item.id, reputation: item.reputation + delta }))}
+                />
+              );
+              return <LocationCard location={item} onPress={() => openEdit(item)} />;
+            }}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <EmptyState
+                icon={TABS.find((t) => t.key === activeTab)?.icon ?? '📜'}
+                title={`Aucun ${activeTab === 'npcs' ? 'PNJ' : activeTab === 'monsters' ? 'monstre' : activeTab === 'factions' ? 'faction' : 'lieu'}`}
+                subtitle="Créez des éléments pour enrichir cette campagne"
+                actionLabel="Créer"
+                onAction={openCreate}
+              />
+            }
+          />
+          <FAB onPress={openCreate} />
+        </>
+      )}
 
       <Modal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        title={isEditing ? tabTitles[activeTab].edit : tabTitles[activeTab].create}
+        title={isEditing ? tabTitles[activeTab]?.edit : tabTitles[activeTab]?.create}
       >
-        {forms[activeTab]()}
+        {forms[activeTab]?.()}
         <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.md }}>
           {isEditing && <Button label="Supprimer" variant="danger" onPress={handleDelete} style={{ flex: 1 }} />}
           <Button label="Enregistrer" onPress={handleSave} style={{ flex: 1 }} />
@@ -348,11 +398,18 @@ export const GMScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  campaignBanner: {
+    backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderBottomWidth: 1, borderBottomColor: colors.border,
+  },
+  campaignBannerLabel: { ...typography.caption, color: colors.textMuted, letterSpacing: 1.5 },
+  campaignBannerName: { ...typography.h5, color: colors.secondary, marginTop: 2 },
   tabList: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 8 },
   gmTab: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: borderRadius.round,
     backgroundColor: colors.surfaceVariant, borderWidth: 1, borderColor: colors.border,
+    height: 40,
   },
   gmTabActive: { borderColor: colors.secondary, backgroundColor: colors.secondary + '22' },
   gmTabIcon: { fontSize: 16 },
@@ -364,6 +421,8 @@ const styles = StyleSheet.create({
   },
   gmTabBadgeText: { fontSize: 10, fontWeight: '800', color: colors.textMuted },
   list: { padding: spacing.md, paddingBottom: 80 },
+  notesContainer: { padding: spacing.md, gap: spacing.sm },
+  notesHint: { ...typography.bodySmall, color: colors.textMuted, lineHeight: 18, marginBottom: 4 },
   card: {
     backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md,
     marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border, ...shadows.small,
