@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ImageBackground,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,6 +8,7 @@ import { useAppSelector, useAppDispatch } from '../store';
 import { selectCharacter } from '../store/slices/charactersSlice';
 import { setActiveCampaign } from '../store/slices/campaignSlice';
 import { setAppMode } from '../store/slices/appModeSlice';
+import { tapSecret } from '../store/slices/themeSlice';
 import { useLan } from '../net/LanContext';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -15,18 +16,8 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const MenuCard = ({
-  icon,
-  title,
-  subtitle,
-  color,
-  onPress,
-}: {
-  icon: string;
-  title: string;
-  subtitle: string;
-  color: string;
-  onPress: () => void;
-}) => (
+  icon, title, subtitle, color, onPress,
+}: { icon: string; title: string; subtitle: string; color: string; onPress: () => void }) => (
   <TouchableOpacity onPress={onPress} style={styles.menuCard} activeOpacity={0.8}>
     <View style={[styles.menuIcon, { backgroundColor: color + '22', borderColor: color }]}>
       <Text style={styles.menuIconText}>{icon}</Text>
@@ -44,6 +35,10 @@ export const MoreScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const lan = useLan();
   const isLanClient = lan.mode === 'connected';
+  const activeTheme = useAppSelector((s) => s.theme.activeTheme);
+  const secretUnlocked = useAppSelector((s) => s.theme.secretUnlocked);
+  const tapCount = useAppSelector((s) => s.theme.secretTapCount);
+
   const character = useAppSelector((s) => {
     const id = s.characters.currentCharacterId;
     return id ? s.characters.characters.find((c) => c.id === id) : null;
@@ -70,14 +65,12 @@ export const MoreScreen: React.FC = () => {
       { text: 'Changer', onPress: () => dispatch(selectCharacter(null)) },
     ]);
   };
-
   const handleSwitchMode = () => {
-    Alert.alert('Changer de mode', 'Retourner au choix solo / multijoueur local / pass-and-play ?', [
+    Alert.alert('Changer de mode', 'Retourner au choix de mode ?', [
       { text: 'Annuler', style: 'cancel' },
       { text: 'Changer', onPress: () => dispatch(setAppMode(null)) },
     ]);
   };
-
   const handleSwitchCampaign = () => {
     Alert.alert('Changer de campagne', 'Retourner à la sélection de campagne ?', [
       { text: 'Annuler', style: 'cancel' },
@@ -85,18 +78,26 @@ export const MoreScreen: React.FC = () => {
     ]);
   };
 
-  return (
+  const handleSecretTap = () => {
+    dispatch(tapSecret());
+    if (tapCount + 1 >= 7 && !secretUnlocked) {
+      Alert.alert('🔥 SECRET DÉBLOQUÉ !', '"Guerrier Légendaire" est maintenant disponible dans les Thèmes !', [
+        { text: '⚡ Découvrir', onPress: () => navigation.navigate('Themes') },
+      ]);
+    }
+  };
+
+  const showLegendaryBg = activeTheme === 'legendary' && secretUnlocked;
+
+  const inner = (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      {/* Character summary */}
       {character && (
         <View style={styles.charSummary}>
           <Text style={styles.summaryName}>{character.name}</Text>
           <Text style={styles.summaryClass}>
             {character.characterClass} Niv.{character.level} · {character.race}
           </Text>
-          {activeCampaign && (
-            <Text style={styles.summaryCampaign}>🗺️ {activeCampaign.name}</Text>
-          )}
+          {activeCampaign && <Text style={styles.summaryCampaign}>🗺️ {activeCampaign.name}</Text>}
           <View style={styles.summaryStats}>
             <View style={styles.summaryStat}>
               <Text style={styles.summaryStatValue}>{questCount}</Text>
@@ -120,109 +121,66 @@ export const MoreScreen: React.FC = () => {
         </View>
       )}
 
-      <Text style={styles.sectionLabel}>Fonctionnalités</Text>
+      <Text style={styles.sectionLabel}>Combat & Aventure</Text>
+      <MenuCard icon="⚔️" title="Gestion du Combat" subtitle="Initiative, PV, conditions, journal" color={colors.error} onPress={() => navigation.navigate('Combat')} />
+      <MenuCard icon="📜" title="Quêtes" subtitle={`${questCount} quête${questCount !== 1 ? 's' : ''} active${questCount !== 1 ? 's' : ''}`} color={colors.primary} onPress={() => navigation.navigate('Quests')} />
+      <MenuCard icon="⏱️" title="Calculateur d'XP" subtitle="Difficulté de rencontre, XP par niveau" color={colors.warning} onPress={() => navigation.navigate('XPCalculator')} />
+      <MenuCard icon="⚔️" title="Table de Rencontres" subtitle="Générez une rencontre par terrain/niveau" color={colors.error} onPress={() => navigation.navigate('EncounterTable')} />
 
-      <MenuCard
-        icon="⚔️"
-        title="Gestion du Combat"
-        subtitle="Initiative, PV, effets de combat"
-        color={colors.error}
-        onPress={() => navigation.navigate('Combat')}
-      />
-      <MenuCard
-        icon="📜"
-        title="Quêtes"
-        subtitle={`${questCount} quête${questCount !== 1 ? 's' : ''} active${questCount !== 1 ? 's' : ''}`}
-        color={colors.primary}
-        onPress={() => navigation.navigate('Quests')}
-      />
+      <Text style={styles.sectionLabel}>Outils du MJ</Text>
       {!isLanClient && (
-        <MenuCard
-          icon="🏰"
-          title="Mode Maître du Jeu"
-          subtitle="PNJ, monstres, factions, lieux"
-          color={colors.secondary}
-          onPress={() => navigation.navigate('GM')}
-        />
+        <MenuCard icon="🏰" title="Mode Maître du Jeu" subtitle="PNJ, monstres, factions, donjon, météo" color={colors.secondary} onPress={() => navigation.navigate('GM')} />
       )}
-      <MenuCard
-        icon="🗺️"
-        title="Campagnes"
-        subtitle="Gérez vos campagnes et sessions"
-        color={colors.warning}
-        onPress={() => navigation.navigate('Campaign')}
-      />
-      <MenuCard
-        icon="🎲"
-        title="Pass-and-Play"
-        subtitle="Gérez le groupe sur un seul appareil"
-        color={colors.success}
-        onPress={() => navigation.navigate('Multiplayer')}
-      />
-      <MenuCard
-        icon="📡"
-        title="Multijoueur Local (LAN)"
-        subtitle="Rejoindre via code sur le même Wi-Fi"
-        color={colors.mana}
-        onPress={() => navigation.navigate('Lan')}
-      />
-      <MenuCard
-        icon="🧭"
-        title="Carte Interactive"
-        subtitle="Importez une carte et placez des marqueurs"
-        color={colors.mana}
-        onPress={() => navigation.navigate('Map')}
-      />
+      <MenuCard icon="🎲" title="Générateur de noms" subtitle="PNJ, villes, tavernes, créatures" color={colors.mana} onPress={() => navigation.navigate('NameGenerator')} />
+
+      <Text style={styles.sectionLabel}>Ressources</Text>
+      <MenuCard icon="🎒" title="Bibliothèque d'équipements" subtitle="Armes, armures, sorts, objets magiques" color={colors.primary} onPress={() => navigation.navigate('EquipmentLibrary')} />
+      <MenuCard icon="📚" title="Tutoriels & Campagnes" subtitle="Apprendre D&D, campagnes prêtes à jouer" color={colors.success} onPress={() => navigation.navigate('Tutorial')} />
+
+      <Text style={styles.sectionLabel}>Campagne & Multijoueur</Text>
+      <MenuCard icon="🗺️" title="Campagnes" subtitle="Gérez vos campagnes et sessions" color={colors.warning} onPress={() => navigation.navigate('Campaign')} />
+      <MenuCard icon="🧭" title="Carte Interactive" subtitle="Importez une carte, placez des marqueurs" color={colors.mana} onPress={() => navigation.navigate('Map')} />
+      <MenuCard icon="🎲" title="Pass-and-Play" subtitle="Plusieurs joueurs sur un seul appareil" color={colors.success} onPress={() => navigation.navigate('Multiplayer')} />
+      <MenuCard icon="📡" title="Multijoueur Local (LAN)" subtitle="Rejoindre via code sur le même Wi-Fi" color={colors.mana} onPress={() => navigation.navigate('Lan')} />
 
       <Text style={styles.sectionLabel}>Gestion</Text>
+      <MenuCard icon="🎨" title="Thèmes visuels" subtitle="Sombre, Parchemin, Moderne..." color={colors.secondary} onPress={() => navigation.navigate('Themes')} />
+      <MenuCard icon="⚙️" title="Paramètres" subtitle="Préférences et données" color={colors.textSecondary} onPress={() => navigation.navigate('Settings')} />
+      <MenuCard icon="🔄" title="Changer de personnage" subtitle="Retour à la sélection" color={colors.textMuted} onPress={handleSwitchCharacter} />
+      <MenuCard icon="🎯" title="Changer de mode" subtitle="Solo, multijoueur local ou pass-and-play" color={colors.textMuted} onPress={handleSwitchMode} />
+      <MenuCard icon="🗺️" title="Changer de campagne" subtitle={activeCampaign ? activeCampaign.name : 'Retour à la sélection'} color={colors.secondary} onPress={handleSwitchCampaign} />
 
-      <MenuCard
-        icon="⚙️"
-        title="Paramètres"
-        subtitle="Préférences et données"
-        color={colors.textSecondary}
-        onPress={() => navigation.navigate('Settings')}
-      />
-      <MenuCard
-        icon="🔄"
-        title="Changer de personnage"
-        subtitle="Retour à la sélection"
-        color={colors.textMuted}
-        onPress={handleSwitchCharacter}
-      />
-      <MenuCard
-        icon="🎯"
-        title="Changer de mode"
-        subtitle="Solo, multijoueur local ou pass-and-play"
-        color={colors.textMuted}
-        onPress={handleSwitchMode}
-      />
-      <MenuCard
-        icon="🗺️"
-        title="Changer de campagne"
-        subtitle={activeCampaign ? activeCampaign.name : 'Retour à la sélection'}
-        color={colors.secondary}
-        onPress={handleSwitchCampaign}
-      />
-
-      <Text style={styles.version}>DiceQuest v1.2.3</Text>
-      <Text style={styles.versionAuthor}>Créé par SHOXOTO</Text>
-      <Text style={styles.versionLove}>Créé avec ❤️ pour les aventuriers et les passionnés de D&D</Text>
+      <TouchableOpacity onPress={handleSecretTap} activeOpacity={0.9} style={styles.footerBtn}>
+        <Text style={styles.version}>DiceQuest v2.0.0</Text>
+        <Text style={styles.versionAuthor}>Créé par SHOXOTO</Text>
+        <Text style={styles.versionLove}>Créé avec ❤️ pour les aventuriers et les passionnés de D&D</Text>
+        {tapCount > 0 && tapCount < 7 && (
+          <Text style={styles.tapHint}>({tapCount}/7)</Text>
+        )}
+      </TouchableOpacity>
     </ScrollView>
   );
+
+  if (showLegendaryBg) {
+    return (
+      <ImageBackground source={require('../../assets/secret-bg.jpg')} style={styles.fullBg} resizeMode="cover">
+        <View style={styles.bgOverlay}>{inner}</View>
+      </ImageBackground>
+    );
+  }
+
+  return inner;
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  fullBg: { flex: 1 },
+  bgOverlay: { flex: 1, backgroundColor: 'rgba(10,0,5,0.75)' },
   content: { padding: spacing.md, paddingBottom: 40 },
   charSummary: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.xl,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    ...shadows.gold,
+    backgroundColor: colors.card, borderRadius: borderRadius.xl,
+    padding: spacing.md, marginBottom: spacing.lg,
+    borderWidth: 1, borderColor: colors.primary, ...shadows.gold,
   },
   summaryName: { ...typography.h3, color: colors.primary, marginBottom: 2 },
   summaryClass: { ...typography.body, color: colors.textSecondary, marginBottom: 4 },
@@ -232,55 +190,26 @@ const styles = StyleSheet.create({
   summaryStatValue: { fontSize: 22, fontWeight: '800', color: colors.text },
   summaryStatLabel: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   sectionLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
+    ...typography.label, color: colors.textMuted,
+    textTransform: 'uppercase', letterSpacing: 1.5,
+    marginTop: spacing.md, marginBottom: spacing.sm,
   },
   menuCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.small,
-    gap: spacing.md,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.card, borderRadius: borderRadius.lg,
+    padding: spacing.md, marginBottom: spacing.sm,
+    borderWidth: 1, borderColor: colors.border,
+    ...shadows.small, gap: spacing.md,
   },
-  menuIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  menuIcon: { width: 52, height: 52, borderRadius: borderRadius.lg, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   menuIconText: { fontSize: 26 },
   menuInfo: { flex: 1 },
   menuTitle: { ...typography.h5, color: colors.text, marginBottom: 2 },
   menuSubtitle: { ...typography.bodySmall, color: colors.textSecondary },
   menuArrow: { color: colors.primary, fontSize: 22, fontWeight: '300' },
-  version: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.xl,
-  },
-  versionAuthor: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  versionLove: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: 2,
-  },
+  footerBtn: { alignItems: 'center', paddingVertical: spacing.xl },
+  version: { ...typography.caption, color: colors.textMuted, textAlign: 'center', marginTop: spacing.xl },
+  versionAuthor: { ...typography.caption, color: colors.primary, fontWeight: '700', textAlign: 'center', marginTop: 2 },
+  versionLove: { ...typography.caption, color: colors.textMuted, textAlign: 'center', marginTop: 2 },
+  tapHint: { ...typography.caption, color: colors.secondary, marginTop: 4 },
 });

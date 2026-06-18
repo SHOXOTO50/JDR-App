@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Alert,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ScrollView,
 } from 'react-native';
 import { useAppSelector, useAppDispatch } from '../store';
 import {
@@ -17,6 +17,8 @@ import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import {
   generateId, getDispositionColor, getDispositionLabel, getLocationTypeLabel, getHPColor,
 } from '../utils/helpers';
+import { generateDungeon, GeneratedDungeon } from '../data/dungeonGenerator';
+import { rollWeather, WeatherResult, SEASONS, REGIONS } from '../data/weatherTables';
 import { Modal } from '../components/common/Modal';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
@@ -24,7 +26,7 @@ import { FAB } from '../components/common/FAB';
 import { EmptyState } from '../components/common/EmptyState';
 import { Badge } from '../components/common/Badge';
 
-type GMTab = 'npcs' | 'monsters' | 'factions' | 'locations' | 'notes' | 'group';
+type GMTab = 'npcs' | 'monsters' | 'factions' | 'locations' | 'notes' | 'tools' | 'group';
 
 const TABS: { key: GMTab; label: string; icon: string }[] = [
   { key: 'npcs', label: 'PNJ', icon: '👤' },
@@ -32,6 +34,7 @@ const TABS: { key: GMTab; label: string; icon: string }[] = [
   { key: 'factions', label: 'Factions', icon: '⚑' },
   { key: 'locations', label: 'Lieux', icon: '🏰' },
   { key: 'notes', label: 'Notes MJ', icon: '📝' },
+  { key: 'tools', label: 'Outils', icon: '🧰' },
 ];
 
 const GROUP_TAB: { key: GMTab; label: string; icon: string } = { key: 'group', label: 'Groupe', icon: '👥' };
@@ -205,6 +208,10 @@ export const GMScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [notesDraft, setNotesDraft] = useState(activeCampaign?.gmNotes ?? '');
+  const [dungeonResult, setDungeonResult] = useState<GeneratedDungeon | null>(null);
+  const [weatherResult, setWeatherResult] = useState<WeatherResult | null>(null);
+  const [weatherSeason, setWeatherSeason] = useState(0);
+  const [weatherRegion, setWeatherRegion] = useState(0);
 
   const defaultNPC = (): NPC => ({
     id: generateId(), name: '', race: '', role: '', description: '',
@@ -398,6 +405,78 @@ export const GMScreen: React.FC = () => {
 
       {activeTab === 'group' ? (
         <GroupOverview roster={lan.roster} />
+      ) : activeTab === 'tools' ? (
+        <ScrollView contentContainerStyle={styles.toolsContainer} showsVerticalScrollIndicator={false}>
+          {/* Dungeon Generator */}
+          <View style={styles.toolSection}>
+            <Text style={styles.toolTitle}>🏚️ Générateur de Donjon</Text>
+            <Button label="Générer un donjon" onPress={() => setDungeonResult(generateDungeon())} fullWidth />
+            {dungeonResult && (
+              <View style={styles.toolResult}>
+                <Text style={styles.toolResultTitle}>{dungeonResult.title}</Text>
+                <Text style={styles.toolResultSub}>{dungeonResult.entrance}</Text>
+                {dungeonResult.rooms.map((room, i) => (
+                  <View key={room.id} style={styles.dungeonRoom}>
+                    <Text style={styles.dungeonRoomNum}>Salle {i + 1}</Text>
+                    <Text style={styles.dungeonRoomName}>{room.isBossRoom ? '💀 ' : ''}{room.name}</Text>
+                    <Text style={styles.dungeonRoomDesc}>{room.description}</Text>
+                    {room.hasTrap && room.trap && <Text style={styles.dungeonTag}>⚠️ Piège: {room.trap.name} ({room.trap.difficulty})</Text>}
+                    {room.hasTreasure && room.treasure && <Text style={styles.dungeonTag}>💰 Trésor: {room.treasure}</Text>}
+                    {room.hasMonster && room.monster && <Text style={styles.dungeonTag}>👹 Monstre: {room.monster}</Text>}
+                    {room.isBossRoom && room.bossName && (
+                      <>
+                        <Text style={[styles.dungeonTag, { color: colors.error, fontWeight: '700' }]}>👑 Boss: {room.bossName}</Text>
+                        {room.bossReward && <Text style={styles.dungeonTag}>🏆 Récompense: {room.bossReward}</Text>}
+                      </>
+                    )}
+                  </View>
+                ))}
+                <Text style={[styles.dungeonTag, { color: colors.secondary, marginTop: 4 }]}>🔍 Secret: {dungeonResult.secret}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Weather Generator */}
+          <View style={styles.toolSection}>
+            <Text style={styles.toolTitle}>🌦️ Générateur de Météo</Text>
+            <Text style={styles.toolSubtitle}>Saison</Text>
+            <View style={styles.pickerRow}>
+              {SEASONS.map((s, i) => (
+                <TouchableOpacity key={s.key} onPress={() => setWeatherSeason(i)}
+                  style={[styles.pickerChip, weatherSeason === i && styles.pickerChipActive]}>
+                  <Text style={[styles.pickerChipText, weatherSeason === i && styles.pickerChipTextActive]}>{s.icon} {s.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.toolSubtitle}>Région</Text>
+            <View style={styles.pickerRow}>
+              {REGIONS.map((r, i) => (
+                <TouchableOpacity key={r.key} onPress={() => setWeatherRegion(i)}
+                  style={[styles.pickerChip, weatherRegion === i && styles.pickerChipActive]}>
+                  <Text style={[styles.pickerChipText, weatherRegion === i && styles.pickerChipTextActive]}>{r.icon} {r.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Button
+              label="Tirer la météo"
+              onPress={() => setWeatherResult(rollWeather(SEASONS[weatherSeason].key, REGIONS[weatherRegion].key))}
+              fullWidth
+            />
+            {weatherResult && (
+              <View style={styles.toolResult}>
+                <Text style={styles.weatherIcon}>{weatherResult.icon}</Text>
+                <Text style={styles.weatherCondition}>{weatherResult.condition}</Text>
+                <View style={styles.weatherDetails}>
+                  <Text style={styles.weatherDetail}>🌡️ {weatherResult.temperature}</Text>
+                  <Text style={styles.weatherDetail}>💨 {weatherResult.wind}</Text>
+                  <Text style={styles.weatherDetail}>👁️ {weatherResult.visibility}</Text>
+                </View>
+                <Text style={styles.weatherEffect}>⚡ {weatherResult.effect}</Text>
+                <Text style={styles.weatherAmbiance}>🎭 {weatherResult.ambiance}</Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
       ) : activeTab === 'notes' ? (
         <View style={styles.notesContainer}>
           <Text style={styles.notesHint}>
@@ -532,4 +611,36 @@ const styles = StyleSheet.create({
   selectChipActive: { borderColor: colors.primary, backgroundColor: colors.primaryDark + '33' },
   selectChipText: { ...typography.bodySmall, color: colors.textMuted, fontWeight: '600' },
   selectChipTextActive: { color: colors.primary },
+  toolsContainer: { padding: spacing.md, paddingBottom: 80, gap: spacing.lg },
+  toolSection: { gap: spacing.sm },
+  toolTitle: { ...typography.h5, color: colors.secondary, marginBottom: 4 },
+  toolSubtitle: { ...typography.label, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6, marginTop: 8 },
+  pickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.sm },
+  pickerChip: {
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: borderRadius.round,
+    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceVariant,
+  },
+  pickerChipActive: { borderColor: colors.secondary, backgroundColor: colors.secondary + '22' },
+  pickerChipText: { ...typography.bodySmall, color: colors.textMuted, fontWeight: '600' },
+  pickerChipTextActive: { color: colors.secondary },
+  toolResult: {
+    backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md,
+    borderWidth: 1, borderColor: colors.border, marginTop: spacing.sm,
+  },
+  toolResultTitle: { ...typography.h5, color: colors.primary, marginBottom: 4 },
+  toolResultSub: { ...typography.bodySmall, color: colors.textSecondary, marginBottom: spacing.sm },
+  dungeonRoom: {
+    borderLeftWidth: 2, borderLeftColor: colors.border, paddingLeft: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  dungeonRoomNum: { ...typography.caption, color: colors.textMuted, textTransform: 'uppercase' },
+  dungeonRoomName: { ...typography.body, color: colors.text, fontWeight: '700', marginBottom: 2 },
+  dungeonRoomDesc: { ...typography.bodySmall, color: colors.textSecondary, marginBottom: 4 },
+  dungeonTag: { ...typography.bodySmall, color: colors.warning, marginTop: 2 },
+  weatherIcon: { fontSize: 40, textAlign: 'center', marginBottom: 4 },
+  weatherCondition: { ...typography.h4, color: colors.text, textAlign: 'center', marginBottom: spacing.sm },
+  weatherDetails: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: spacing.sm },
+  weatherDetail: { ...typography.bodySmall, color: colors.textSecondary },
+  weatherEffect: { ...typography.bodySmall, color: colors.warning, marginTop: 4 },
+  weatherAmbiance: { ...typography.bodySmall, color: colors.secondary, marginTop: 2, fontStyle: 'italic' },
 });

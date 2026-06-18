@@ -17,6 +17,13 @@ import { QuestsScreen } from '../screens/QuestsScreen';
 import { MapScreen } from '../screens/MapScreen';
 import { MultiplayerScreen } from '../screens/MultiplayerScreen';
 import { LanScreen } from '../screens/LanScreen';
+import { NameGeneratorScreen } from '../screens/NameGeneratorScreen';
+import { EncounterTableScreen } from '../screens/EncounterTableScreen';
+import { EquipmentLibraryScreen } from '../screens/EquipmentLibraryScreen';
+import { TutorialScreen } from '../screens/TutorialScreen';
+import { PatchNotesScreen } from '../screens/PatchNotesScreen';
+import { ThemesScreen } from '../screens/ThemesScreen';
+import { XPCalculatorScreen } from '../screens/XPCalculatorScreen';
 import { colors } from '../theme';
 
 export type RootStackParamList = {
@@ -33,6 +40,13 @@ export type RootStackParamList = {
   Map: undefined;
   Multiplayer: undefined;
   Lan: undefined;
+  NameGenerator: undefined;
+  EncounterTable: undefined;
+  EquipmentLibrary: undefined;
+  Tutorial: undefined;
+  PatchNotes: undefined;
+  Themes: undefined;
+  XPCalculator: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -132,6 +146,13 @@ export const AppNavigator: React.FC = () => {
         <Stack.Screen name="Lan" component={LanScreen} options={{ title: 'Multijoueur Local (LAN)' }} />
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Paramètres', presentation: 'modal' }} />
         <Stack.Screen name="Quests" component={QuestsScreen} options={{ title: 'Quêtes' }} />
+        <Stack.Screen name="NameGenerator" component={NameGeneratorScreen} options={{ title: 'Générateur de noms' }} />
+        <Stack.Screen name="EncounterTable" component={EncounterTableScreen} options={{ title: 'Table de rencontres' }} />
+        <Stack.Screen name="EquipmentLibrary" component={EquipmentLibraryScreen} options={{ title: 'Bibliothèque d\'équipements' }} />
+        <Stack.Screen name="Tutorial" component={TutorialScreen} options={{ title: 'Tutoriels & Campagnes' }} />
+        <Stack.Screen name="PatchNotes" component={PatchNotesScreen} options={{ title: 'Notes de mise à jour' }} />
+        <Stack.Screen name="Themes" component={ThemesScreen} options={{ title: 'Thèmes visuels' }} />
+        <Stack.Screen name="XPCalculator" component={XPCalculatorScreen} options={{ title: 'Calculateur d\'XP' }} />
       </>
     );
   };

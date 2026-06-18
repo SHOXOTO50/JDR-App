@@ -3,11 +3,14 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppSelector, useAppDispatch } from '../store';
 import {
   addItem, updateItem, deleteItem, toggleEquipped, updateQuantity,
 } from '../store/slices/inventorySlice';
 import { InventoryItem, ItemCategory, ItemRarity } from '../types';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { generateId, getRarityColor, getRarityLabel, getCategoryLabel } from '../utils/helpers';
 import { Modal } from '../components/common/Modal';
@@ -142,8 +145,11 @@ const ItemForm = ({
   </>
 );
 
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
 export const InventoryScreen: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<Nav>();
   const currentId = useAppSelector((s) => s.characters.currentCharacterId) ?? '';
   const allItems = useAppSelector((s) => s.inventory.items);
   const items = allItems.filter((i) => i.characterId === currentId);
@@ -194,20 +200,26 @@ export const InventoryScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Search */}
-      <View style={styles.searchBar}>
-        <TextInput
-          style={styles.searchInput}
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Rechercher un objet..."
-          placeholderTextColor={colors.textMuted}
-        />
-        {search ? (
-          <TouchableOpacity onPress={() => setSearch('')} style={styles.clearSearch}>
-            <Text style={styles.clearSearchText}>✕</Text>
-          </TouchableOpacity>
-        ) : null}
+      {/* Search + Library button */}
+      <View style={styles.topBar}>
+        <View style={[styles.searchBar, { flex: 1, margin: 0, marginRight: spacing.sm }]}>
+          <TextInput
+            style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Rechercher un objet..."
+            placeholderTextColor={colors.textMuted}
+          />
+          {search ? (
+            <TouchableOpacity onPress={() => setSearch('')} style={styles.clearSearch}>
+              <Text style={styles.clearSearchText}>✕</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        <TouchableOpacity onPress={() => navigation.navigate('EquipmentLibrary')} style={styles.libraryBtn}>
+          <Text style={styles.libraryBtnText}>📚</Text>
+          <Text style={styles.libraryBtnLabel}>Biblio.</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Category tabs */}
@@ -287,11 +299,21 @@ export const InventoryScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  topBar: {
+    flexDirection: 'row', alignItems: 'center',
+    margin: spacing.md, marginBottom: spacing.sm,
+  },
+  libraryBtn: {
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.primary + '22', borderRadius: borderRadius.md,
+    borderWidth: 1, borderColor: colors.primary,
+    paddingHorizontal: 10, paddingVertical: 4, minWidth: 52,
+  },
+  libraryBtnText: { fontSize: 18 },
+  libraryBtnLabel: { ...typography.caption, color: colors.primary, fontWeight: '700', fontSize: 9 },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: spacing.md,
-    marginBottom: spacing.sm,
     backgroundColor: colors.surfaceVariant,
     borderRadius: borderRadius.md,
     borderWidth: 1,

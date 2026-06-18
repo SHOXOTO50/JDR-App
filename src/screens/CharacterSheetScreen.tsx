@@ -10,6 +10,10 @@ import {
   updateCharacterHP, updateCharacterCurrency, toggleInspiration,
   selectCharacter, updateDeathSaves,
 } from '../store/slices/charactersSlice';
+import {
+  ensureResources, useSpellSlot, restoreSpellSlot, longRest,
+  useResource, restoreResource, useCustomResource, restoreCustomResource,
+} from '../store/slices/resourcesSlice';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { getModifierString, getModifier, formatGold } from '../utils/helpers';
 import { HPBar } from '../components/common/HPBar';
@@ -30,12 +34,19 @@ export const CharacterSheetScreen: React.FC = () => {
   const characters = useAppSelector((s) => s.characters.characters);
   const currentId = useAppSelector((s) => s.characters.currentCharacterId);
   const character = characters.find((c) => c.id === currentId);
+  const resources = useAppSelector((s) => s.resources.resources.find((r) => r.characterId === currentId));
 
   const [hpModal, setHpModal] = useState(false);
   const [hpAmount, setHpAmount] = useState('');
   const [hpMode, setHpMode] = useState<'damage' | 'heal' | 'set'>('damage');
   const [currencyModal, setCurrencyModal] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>('stats');
+
+  useEffect(() => {
+    if (currentId && !resources) {
+      dispatch(ensureResources(currentId));
+    }
+  }, [currentId]);
 
   if (!character) return null;
 
@@ -269,6 +280,115 @@ export const CharacterSheetScreen: React.FC = () => {
                 ))}
               </View>
             ))}
+          </Card>
+        )}
+
+        {/* Resources (spell slots, ki, etc.) */}
+        {resources && (
+          <Card style={styles.section}>
+            <TouchableOpacity onPress={() => toggleSection('resources')} style={styles.sectionToggle}>
+              <SectionHeader title="Ressources" />
+              <Text style={styles.toggleIcon}>{expandedSection === 'resources' ? '▲' : '▼'}</Text>
+            </TouchableOpacity>
+            {expandedSection === 'resources' && (
+              <View style={styles.resourcesContainer}>
+                {/* Spell slots */}
+                {resources.spellSlots.map((slot) => {
+                  if (slot.total === 0) return null;
+                  return (
+                    <View key={slot.level} style={styles.resourceRow}>
+                      <Text style={styles.resourceLabel}>Sorts Niv.{slot.level}</Text>
+                      <View style={styles.slotDots}>
+                        {Array.from({ length: slot.total }).map((_, i) => {
+                          const used = i < slot.used;
+                          return (
+                            <TouchableOpacity
+                              key={i}
+                              style={[styles.slotDot, used && styles.slotDotUsed]}
+                              onPress={() => {
+                                if (used) {
+                                  dispatch(restoreSpellSlot({ characterId: currentId!, level: slot.level }));
+                                } else {
+                                  dispatch(useSpellSlot({ characterId: currentId!, level: slot.level }));
+                                }
+                              }}
+                            />
+                          );
+                        })}
+                      </View>
+                      <Text style={styles.resourceCount}>{slot.total - slot.used}/{slot.total}</Text>
+                    </View>
+                  );
+                })}
+                {/* Ki */}
+                {resources.ki.total > 0 && (
+                  <View style={styles.resourceRow}>
+                    <Text style={styles.resourceLabel}>🌀 Ki</Text>
+                    <View style={styles.resourceBtns}>
+                      <TouchableOpacity style={styles.resBtnMinus} onPress={() => dispatch(useResource({ characterId: currentId!, resource: 'ki' }))}>
+                        <Text style={styles.resBtnText}>−</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.resourceCount}>{resources.ki.total - resources.ki.used}/{resources.ki.total}</Text>
+                      <TouchableOpacity style={styles.resBtnPlus} onPress={() => dispatch(restoreResource({ characterId: currentId!, resource: 'ki' }))}>
+                        <Text style={styles.resBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+                {/* Bardic Inspiration */}
+                {resources.bardicInspiration.total > 0 && (
+                  <View style={styles.resourceRow}>
+                    <Text style={styles.resourceLabel}>🎵 Inspiration bardique</Text>
+                    <View style={styles.resourceBtns}>
+                      <TouchableOpacity style={styles.resBtnMinus} onPress={() => dispatch(useResource({ characterId: currentId!, resource: 'bardicInspiration' }))}>
+                        <Text style={styles.resBtnText}>−</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.resourceCount}>{resources.bardicInspiration.total - resources.bardicInspiration.used}/{resources.bardicInspiration.total}</Text>
+                      <TouchableOpacity style={styles.resBtnPlus} onPress={() => dispatch(restoreResource({ characterId: currentId!, resource: 'bardicInspiration' }))}>
+                        <Text style={styles.resBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+                {/* Rage */}
+                {resources.rage.total > 0 && (
+                  <View style={styles.resourceRow}>
+                    <Text style={styles.resourceLabel}>💢 Rages</Text>
+                    <View style={styles.resourceBtns}>
+                      <TouchableOpacity style={styles.resBtnMinus} onPress={() => dispatch(useResource({ characterId: currentId!, resource: 'rage' }))}>
+                        <Text style={styles.resBtnText}>−</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.resourceCount}>{resources.rage.total - resources.rage.used}/{resources.rage.total}</Text>
+                      <TouchableOpacity style={styles.resBtnPlus} onPress={() => dispatch(restoreResource({ characterId: currentId!, resource: 'rage' }))}>
+                        <Text style={styles.resBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+                {/* Custom resources */}
+                {resources.customResources.map((cr) => (
+                  <View key={cr.id} style={styles.resourceRow}>
+                    <Text style={styles.resourceLabel}>{cr.name}</Text>
+                    <View style={styles.resourceBtns}>
+                      <TouchableOpacity style={styles.resBtnMinus} onPress={() => dispatch(useCustomResource({ characterId: currentId!, id: cr.id }))}>
+                        <Text style={styles.resBtnText}>−</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.resourceCount}>{cr.total - cr.used}/{cr.total}</Text>
+                      <TouchableOpacity style={styles.resBtnPlus} onPress={() => dispatch(restoreCustomResource({ characterId: currentId!, id: cr.id }))}>
+                        <Text style={styles.resBtnText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+                <Button
+                  label="Repos long (restaure tout)"
+                  variant="ghost"
+                  onPress={() => dispatch(longRest(currentId!))}
+                  fullWidth
+                  style={{ marginTop: spacing.sm }}
+                />
+              </View>
+            )}
           </Card>
         )}
 
@@ -524,6 +644,28 @@ const styles = StyleSheet.create({
   coinLabel: { ...typography.caption, color: colors.textMuted, textTransform: 'uppercase', marginTop: 2 },
   descLabel: { ...typography.label, color: colors.textMuted, textTransform: 'uppercase', marginBottom: 6 },
   descText: { ...typography.body, color: colors.textSecondary, lineHeight: 22 },
+  resourcesContainer: { marginTop: spacing.sm, gap: 10 },
+  resourceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  resourceLabel: { ...typography.bodySmall, color: colors.textSecondary, flex: 1, fontWeight: '600' },
+  slotDots: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  slotDot: {
+    width: 20, height: 20, borderRadius: 10,
+    borderWidth: 1.5, borderColor: colors.secondary, backgroundColor: colors.secondary + '33',
+  },
+  slotDotUsed: { backgroundColor: 'transparent', borderColor: colors.border },
+  resourceCount: { ...typography.bodySmall, color: colors.text, fontWeight: '700', minWidth: 36, textAlign: 'right' },
+  resourceBtns: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  resBtnMinus: {
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: colors.error + '22', borderWidth: 1, borderColor: colors.error,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  resBtnPlus: {
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: colors.success + '22', borderWidth: 1, borderColor: colors.success,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  resBtnText: { color: colors.text, fontWeight: '700', fontSize: 16, lineHeight: 18 },
   modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
   modalBox: { backgroundColor: colors.surface, borderRadius: borderRadius.xl, padding: spacing.lg, width: '100%', borderWidth: 1, borderColor: colors.border },
   modalTitle: { ...typography.h4, color: colors.primary, marginBottom: spacing.md, textAlign: 'center' },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ScrollView, Alert, Modal as RNModal,
@@ -18,6 +18,7 @@ import { HPBar } from '../components/common/HPBar';
 import { Badge } from '../components/common/Badge';
 import { EmptyState } from '../components/common/EmptyState';
 import { Modal } from '../components/common/Modal';
+import { triggerEffect } from '../utils/effectSystem';
 
 const defaultCombat = (characterId: string): CombatStateType => ({
   id: generateId(),
@@ -110,10 +111,18 @@ const CombatantRow = ({
           placeholder="Montant"
           containerStyle={{ flex: 1, marginBottom: 0 }}
         />
-        <TouchableOpacity style={styles.damageBtn} onPress={() => { onDamage(parseInt(amount) || 0); setAmount(''); }}>
+        <TouchableOpacity style={styles.damageBtn} onPress={() => {
+          onDamage(parseInt(amount) || 0);
+          triggerEffect('damage_dealt');
+          setAmount('');
+        }}>
           <Text style={styles.damageBtnText}>🗡️ Dégât</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.healBtn} onPress={() => { onHeal(parseInt(amount) || 0); setAmount(''); }}>
+        <TouchableOpacity style={styles.healBtn} onPress={() => {
+          onHeal(parseInt(amount) || 0);
+          triggerEffect('heal_received');
+          setAmount('');
+        }}>
           <Text style={styles.healBtnText}>💚 Soin</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.condBtn} onPress={onCondition}>
@@ -122,6 +131,12 @@ const CombatantRow = ({
       </View>
     </View>
   );
+};
+
+const formatTime = (s: number) => {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2, '0')}`;
 };
 
 export const CombatScreen: React.FC = () => {
@@ -137,9 +152,52 @@ export const CombatScreen: React.FC = () => {
   const [condModal, setCondModal] = useState<{ combatantId: string } | null>(null);
   const [showLog, setShowLog] = useState(false);
 
+  // Turn timer
+  const [timerActive, setTimerActive] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(60);
+  const [timerInitial, setTimerInitial] = useState(60);
+  const [timerSetupModal, setTimerSetupModal] = useState(false);
+  const [timerInput, setTimerInput] = useState('60');
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (timerActive && timerSeconds > 0) {
+      timerRef.current = setInterval(() => {
+        setTimerSeconds((s) => {
+          if (s <= 1) {
+            setTimerActive(false);
+            triggerEffect('combat_next_turn');
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timerActive]);
+
+  const handleTimerSetup = () => {
+    const s = Math.max(5, Math.min(600, parseInt(timerInput) || 60));
+    setTimerInitial(s);
+    setTimerSeconds(s);
+    setTimerActive(false);
+    setTimerSetupModal(false);
+  };
+
+  const handleNextTurn = () => {
+    if (!activeCombat) return;
+    dispatch(nextTurn(activeCombat.id));
+    triggerEffect('combat_next_turn');
+    setTimerSeconds(timerInitial);
+    setTimerActive(false);
+  };
+
   const createCombat = () => {
     const combat = defaultCombat(currentId);
     dispatch(startCombat(combat));
+    triggerEffect('combat_start');
   };
 
   const handleAddCombatant = () => {
@@ -161,7 +219,7 @@ export const CombatScreen: React.FC = () => {
     if (!activeCombat) return;
     Alert.alert('Terminer le combat', 'Êtes-vous sûr ?', [
       { text: 'Annuler', style: 'cancel' },
-      { text: 'Terminer', onPress: () => dispatch(endCombat(activeCombat.id)) },
+      { text: 'Terminer', onPress: () => { dispatch(endCombat(activeCombat.id)); setTimerActive(false); } },
     ]);
   };
 
@@ -190,6 +248,8 @@ export const CombatScreen: React.FC = () => {
     );
   }
 
+  const timerColor = timerSeconds <= 10 ? colors.error : timerSeconds <= 20 ? colors.warning : colors.success;
+
   return (
     <View style={styles.container}>
       {/* Combat header */}
@@ -205,8 +265,26 @@ export const CombatScreen: React.FC = () => {
             Tour de {activeCombat.combatants[activeCombat.currentTurnIndex]?.name ?? '—'}
           </Text>
         </View>
+
+        {/* Timer */}
         <TouchableOpacity
-          onPress={() => dispatch(nextTurn(activeCombat.id))}
+          onPress={() => {
+            if (timerSeconds === 0) {
+              setTimerSeconds(timerInitial);
+              setTimerActive(false);
+            } else {
+              setTimerActive((a) => !a);
+            }
+          }}
+          onLongPress={() => setTimerSetupModal(true)}
+          style={[styles.timerBox, { borderColor: timerColor }]}
+        >
+          <Text style={[styles.timerValue, { color: timerColor }]}>{formatTime(timerSeconds)}</Text>
+          <Text style={styles.timerLabel}>{timerActive ? '⏸' : timerSeconds === 0 ? '↺' : '▶'}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={handleNextTurn}
           style={styles.nextTurnBtn}
           disabled={activeCombat.combatants.length === 0}
         >
@@ -229,7 +307,7 @@ export const CombatScreen: React.FC = () => {
         <FlatList
           data={[...activeCombat.combatants].sort((a, b) => b.initiative - a.initiative)}
           keyExtractor={(c) => c.id}
-          renderItem={({ item, index }) => (
+          renderItem={({ item }) => (
             <CombatantRow
               combatant={item}
               isActive={item.isActive}
@@ -262,6 +340,25 @@ export const CombatScreen: React.FC = () => {
           ))}
         </ScrollView>
       )}
+
+      {/* Timer setup modal */}
+      <Modal visible={timerSetupModal} onClose={() => setTimerSetupModal(false)} title="⏱ Minuteur de tour">
+        <Text style={styles.timerSetupLabel}>Durée du tour (secondes)</Text>
+        <Input
+          value={timerInput}
+          onChangeText={setTimerInput}
+          keyboardType="numeric"
+          placeholder="60"
+        />
+        <View style={styles.timerPresets}>
+          {[30, 60, 90, 120].map((s) => (
+            <TouchableOpacity key={s} onPress={() => setTimerInput(String(s))} style={styles.timerPreset}>
+              <Text style={styles.timerPresetText}>{s}s</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Button label="Appliquer" onPress={handleTimerSetup} fullWidth />
+      </Modal>
 
       {/* Add combatant modal */}
       <Modal visible={addModal} onClose={() => setAddModal(false)} title="Ajouter un combattant">
@@ -310,6 +407,7 @@ export const CombatScreen: React.FC = () => {
                         dispatch(removeConditionFromCombatant({ combatId: activeCombat.id, combatantId: condModal.combatantId, condition: cond.id }));
                       } else {
                         dispatch(addConditionToCombatant({ combatId: activeCombat.id, combatantId: condModal.combatantId, condition: cond.id }));
+                        triggerEffect('condition_applied');
                       }
                     }}
                   >
@@ -332,24 +430,38 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   combatHeader: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.card, padding: spacing.md,
-    borderBottomWidth: 1, borderBottomColor: colors.border, gap: spacing.md,
+    backgroundColor: colors.card, padding: spacing.sm,
+    borderBottomWidth: 1, borderBottomColor: colors.border, gap: spacing.sm,
   },
   roundBox: {
-    width: 56, height: 56, borderRadius: borderRadius.round,
+    width: 48, height: 48, borderRadius: borderRadius.round,
     backgroundColor: colors.primary + '22', borderWidth: 2, borderColor: colors.primary,
     alignItems: 'center', justifyContent: 'center',
   },
-  roundNum: { fontSize: 22, fontWeight: '900', color: colors.primary },
-  roundLabel: { ...typography.caption, color: colors.primaryDark, textTransform: 'uppercase' },
+  roundNum: { fontSize: 20, fontWeight: '900', color: colors.primary },
+  roundLabel: { ...typography.caption, color: colors.primaryDark, textTransform: 'uppercase', fontSize: 8 },
   combatMeta: { flex: 1 },
   combatName: { ...typography.h5, color: colors.text },
   combatInfo: { ...typography.bodySmall, color: colors.textSecondary, marginTop: 2 },
+  timerBox: {
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderRadius: borderRadius.md,
+    paddingHorizontal: 10, paddingVertical: 6, minWidth: 64,
+  },
+  timerValue: { fontSize: 16, fontWeight: '800', lineHeight: 20 },
+  timerLabel: { fontSize: 10, color: colors.textMuted },
+  timerSetupLabel: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.sm },
+  timerPresets: { flexDirection: 'row', gap: 8, marginBottom: spacing.md },
+  timerPreset: {
+    flex: 1, paddingVertical: 8, borderRadius: borderRadius.md, alignItems: 'center',
+    backgroundColor: colors.surfaceVariant, borderWidth: 1, borderColor: colors.border,
+  },
+  timerPresetText: { ...typography.body, color: colors.textSecondary, fontWeight: '600' },
   nextTurnBtn: {
     backgroundColor: colors.primary, borderRadius: borderRadius.md,
-    paddingHorizontal: 14, paddingVertical: 10, alignItems: 'center',
+    paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center',
   },
-  nextTurnIcon: { fontSize: 16, color: colors.background },
+  nextTurnIcon: { fontSize: 14, color: colors.background },
   nextTurnText: { ...typography.caption, color: colors.background, fontWeight: '700' },
   tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border },
   tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },

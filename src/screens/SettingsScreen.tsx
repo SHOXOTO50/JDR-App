@@ -1,22 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, Switch,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppSelector, useAppDispatch } from '../store';
 import { selectCharacter } from '../store/slices/charactersSlice';
 import { deleteItemsByCharacter } from '../store/slices/inventorySlice';
 import { deleteNotesByCharacter } from '../store/slices/notesSlice';
 import { deleteQuestsByCharacter } from '../store/slices/questsSlice';
+import { toggleEffects } from '../store/slices/themeSlice';
+import { setEffectsEnabled } from '../utils/effectSystem';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { formatDate } from '../utils/helpers';
+import { RootStackParamList } from '../navigation/AppNavigator';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const SettingRow = ({
-  icon,
-  title,
-  subtitle,
-  onPress,
-  danger,
-  value,
+  icon, title, subtitle, onPress, danger, value, rightElement,
 }: {
   icon: string;
   title: string;
@@ -24,11 +26,12 @@ const SettingRow = ({
   onPress?: () => void;
   danger?: boolean;
   value?: string;
+  rightElement?: React.ReactNode;
 }) => (
   <TouchableOpacity
     onPress={onPress}
     style={styles.settingRow}
-    disabled={!onPress}
+    disabled={!onPress && !rightElement}
     activeOpacity={onPress ? 0.7 : 1}
   >
     <Text style={styles.settingIcon}>{icon}</Text>
@@ -36,8 +39,7 @@ const SettingRow = ({
       <Text style={[styles.settingTitle, danger && styles.settingDanger]}>{title}</Text>
       {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
     </View>
-    {value && <Text style={styles.settingValue}>{value}</Text>}
-    {onPress && !value && <Text style={styles.settingArrow}>›</Text>}
+    {rightElement ?? (value ? <Text style={styles.settingValue}>{value}</Text> : onPress ? <Text style={styles.settingArrow}>›</Text> : null)}
   </TouchableOpacity>
 );
 
@@ -47,6 +49,7 @@ const SectionTitle = ({ title }: { title: string }) => (
 
 export const SettingsScreen: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<Nav>();
   const characters = useAppSelector((s) => s.characters.characters);
   const currentId = useAppSelector((s) => s.characters.currentCharacterId);
   const currentCharacter = characters.find((c) => c.id === currentId);
@@ -57,6 +60,7 @@ export const SettingsScreen: React.FC = () => {
   const campaignCount = useAppSelector((s) => s.campaign.campaigns.length);
   const gmNPCCount = useAppSelector((s) => s.gm.npcs.length);
   const gmMonsterCount = useAppSelector((s) => s.gm.monsters.length);
+  const effectsEnabled = useAppSelector((s) => s.theme.effectsEnabled);
 
   const handleExportCharacter = () => {
     if (!currentCharacter) return;
@@ -88,6 +92,11 @@ export const SettingsScreen: React.FC = () => {
     );
   };
 
+  const handleToggleEffects = () => {
+    dispatch(toggleEffects());
+    setEffectsEnabled(!effectsEnabled);
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {/* Current character */}
@@ -115,6 +124,35 @@ export const SettingsScreen: React.FC = () => {
           </View>
         </View>
       )}
+
+      <SectionTitle title="Personnalisation" />
+      <View style={styles.section}>
+        <SettingRow
+          icon="🎨"
+          title="Thèmes visuels"
+          subtitle="Changez l'apparence de l'application"
+          onPress={() => navigation.navigate('Themes')}
+        />
+        <SettingRow
+          icon="📋"
+          title="Notes de mise à jour"
+          subtitle="Voir l'historique des versions"
+          onPress={() => navigation.navigate('PatchNotes')}
+        />
+        <SettingRow
+          icon="🎬"
+          title="Effets immersifs"
+          subtitle="Vibrations et éclairs visuels sur les actions"
+          rightElement={
+            <Switch
+              value={effectsEnabled}
+              onValueChange={handleToggleEffects}
+              trackColor={{ false: colors.border, true: colors.primary + '88' }}
+              thumbColor={effectsEnabled ? colors.primary : colors.textMuted}
+            />
+          }
+        />
+      </View>
 
       <SectionTitle title="Données" />
       <View style={styles.section}>
@@ -153,7 +191,7 @@ export const SettingsScreen: React.FC = () => {
 
       <SectionTitle title="À propos" />
       <View style={styles.section}>
-        <SettingRow icon="🎲" title="DiceQuest" value="v1.2.3" />
+        <SettingRow icon="🎲" title="DiceQuest" value="v2.0.0" />
         <SettingRow icon="⚔️" title="Compatible" subtitle="D&D 5e, Pathfinder, Warhammer et plus" />
         <SettingRow icon="🌙" title="Thème" subtitle="Mode sombre fantasy médiéval" />
         <SettingRow icon="💾" title="Stockage" subtitle="Sauvegarde locale automatique" />
@@ -161,7 +199,7 @@ export const SettingsScreen: React.FC = () => {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>⚔️ DiceQuest</Text>
-        <Text style={styles.footerSub}>Version 1.2.3</Text>
+        <Text style={styles.footerSub}>Version 2.0.0</Text>
         <Text style={styles.footerVersion}>Créé par SHOXOTO</Text>
         <Text style={styles.footerLove}>Créé avec ❤️ pour les aventuriers et les passionnés de D&D</Text>
       </View>

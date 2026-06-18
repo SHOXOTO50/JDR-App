@@ -2,7 +2,7 @@
   "expo": {
     "name": "DiceQuest",
     "slug": "jdr-app",
-    "version": "1.2.3",
+    "version": "2.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
