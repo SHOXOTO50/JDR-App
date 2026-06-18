@@ -7,6 +7,7 @@ import {
   addCampaign, updateCampaign, deleteCampaign, setActiveCampaign,
   addSession, updateSession, deleteSession,
 } from '../store/slices/campaignSlice';
+import { addQuest } from '../store/slices/questsSlice';
 import { Campaign, CampaignSession } from '../types';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { generateId, formatDate } from '../utils/helpers';
@@ -18,6 +19,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { Badge } from '../components/common/Badge';
 import { SectionHeader } from '../components/common/SectionHeader';
 import { ThemedScreen } from '../components/ThemedScreen';
+import { CAMPAIGN_QUEST_PACKS, getRecommendedPacks, CampaignQuestPack } from '../data/campaignQuests';
 
 const SYSTEMS = ['D&D 5e', 'Pathfinder', 'Pathfinder 2e', 'Warhammer', 'Call of Cthulhu', 'Personnalisé'];
 
@@ -105,11 +107,14 @@ export const CampaignScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const campaigns = useAppSelector((s) => s.campaign.campaigns);
   const activeCampaignId = useAppSelector((s) => s.campaign.activeCampaignId);
+  const currentCharacterId = useAppSelector((s) => s.characters.currentCharacterId);
+  const existingQuests = useAppSelector((s) => s.quests.quests);
 
   const [view, setView] = useState<'list' | 'detail'>('list');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [campaignModal, setCampaignModal] = useState(false);
   const [sessionModal, setSessionModal] = useState(false);
+  const [questPackModal, setQuestPackModal] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [editingSession, setEditingSession] = useState<CampaignSession | null>(null);
   const [highlightInput, setHighlightInput] = useState('');
@@ -204,6 +209,39 @@ export const CampaignScreen: React.FC = () => {
     setHighlightInput('');
   };
 
+  const handleLoadQuestPack = (pack: CampaignQuestPack) => {
+    if (!currentCharacterId) {
+      Alert.alert('Aucun personnage actif', 'Sélectionnez un personnage pour charger des quêtes.');
+      return;
+    }
+    const existingTitles = new Set(existingQuests.filter((q) => q.characterId === currentCharacterId).map((q) => q.title));
+    const now = new Date().toISOString();
+    let added = 0;
+    pack.quests.forEach((template) => {
+      if (!existingTitles.has(template.title)) {
+        dispatch(addQuest({
+          id: generateId(),
+          characterId: currentCharacterId,
+          title: template.title,
+          description: template.description,
+          reward: template.reward,
+          status: 'active',
+          type: template.type,
+          objectives: template.objectives.map((o) => ({ id: generateId(), description: o, completed: false })),
+          createdAt: now,
+          updatedAt: now,
+        }));
+        added++;
+      }
+    });
+    setQuestPackModal(false);
+    if (added === 0) {
+      Alert.alert('Déjà chargé', 'Toutes les quêtes de ce pack sont déjà dans votre liste.');
+    } else {
+      Alert.alert('📜 Quêtes ajoutées !', `${added} quête${added > 1 ? 's' : ''} ajoutée${added > 1 ? 's' : ''} à votre liste.`);
+    }
+  };
+
   // Detail view
   if (view === 'detail' && selectedCampaign) {
     const campaign = campaigns.find((c) => c.id === selectedCampaign.id) ?? selectedCampaign;
@@ -257,6 +295,23 @@ export const CampaignScreen: React.FC = () => {
                 <SessionCard key={session.id} session={session} onPress={() => openEditSession(session)} />
               ))
           )}
+
+          <SectionHeader title="Quêtes suggérées" />
+          <Text style={styles.questPackHint}>Chargez des quêtes prêtes-à-jouer correspondant à votre campagne.</Text>
+          {getRecommendedPacks(campaign.name, campaign.system).map((pack) => (
+            <TouchableOpacity key={pack.id} style={styles.questPackCard} onPress={() => handleLoadQuestPack(pack)}>
+              <Text style={styles.questPackIcon}>{pack.icon}</Text>
+              <View style={styles.questPackInfo}>
+                <Text style={styles.questPackLabel}>{pack.label}</Text>
+                <Text style={styles.questPackDesc} numberOfLines={1}>{pack.description}</Text>
+                <Text style={styles.questPackCount}>{pack.quests.length} quêtes incluses</Text>
+              </View>
+              <Text style={styles.questPackArrow}>+</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.allPacksBtn} onPress={() => setQuestPackModal(true)}>
+            <Text style={styles.allPacksBtnText}>📚 Voir tous les packs de quêtes</Text>
+          </TouchableOpacity>
         </ScrollView>
 
         <FAB onPress={openCreateSession} icon="+" />
@@ -303,6 +358,21 @@ export const CampaignScreen: React.FC = () => {
               </View>
             </>
           )}
+        </Modal>
+
+        <Modal visible={questPackModal} onClose={() => setQuestPackModal(false)} title="Packs de quêtes">
+          <Text style={styles.questPackModalHint}>Choisissez un pack à charger pour votre personnage actif.</Text>
+          {CAMPAIGN_QUEST_PACKS.map((pack) => (
+            <TouchableOpacity key={pack.id} style={styles.questPackCard} onPress={() => handleLoadQuestPack(pack)}>
+              <Text style={styles.questPackIcon}>{pack.icon}</Text>
+              <View style={styles.questPackInfo}>
+                <Text style={styles.questPackLabel}>{pack.label}</Text>
+                <Text style={styles.questPackDesc}>{pack.description}</Text>
+                <Text style={styles.questPackCount}>{pack.quests.length} quêtes</Text>
+              </View>
+              <Text style={[styles.questPackArrow, { color: colors.primary }]}>+</Text>
+            </TouchableOpacity>
+          ))}
         </Modal>
 
         <Modal visible={campaignModal} onClose={() => setCampaignModal(false)} title="Modifier la campagne">
@@ -461,4 +531,25 @@ const styles = StyleSheet.create({
   },
   inviteCodeLabel: { ...typography.body, color: colors.textSecondary },
   inviteCode: { ...typography.h4, color: colors.primary, letterSpacing: 4, fontWeight: '900' },
+  questPackHint: { ...typography.bodySmall, color: colors.textMuted, marginBottom: spacing.sm },
+  questPackCard: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.card, borderRadius: borderRadius.lg,
+    borderWidth: 1, borderColor: colors.border,
+    padding: spacing.md, marginBottom: spacing.sm, gap: spacing.sm,
+    ...shadows.small,
+  },
+  questPackIcon: { fontSize: 28, width: 36, textAlign: 'center' },
+  questPackInfo: { flex: 1 },
+  questPackLabel: { ...typography.h5, color: colors.text, marginBottom: 2 },
+  questPackDesc: { ...typography.bodySmall, color: colors.textSecondary, marginBottom: 4 },
+  questPackCount: { ...typography.caption, color: colors.primary, fontWeight: '700' },
+  questPackArrow: { color: colors.success, fontSize: 22, fontWeight: '900' },
+  allPacksBtn: {
+    alignItems: 'center', paddingVertical: 12, marginBottom: spacing.xl,
+    borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.border,
+    backgroundColor: colors.surfaceVariant,
+  },
+  allPacksBtnText: { ...typography.body, color: colors.primary, fontWeight: '700' },
+  questPackModalHint: { ...typography.bodySmall, color: colors.textMuted, marginBottom: spacing.md },
 });
