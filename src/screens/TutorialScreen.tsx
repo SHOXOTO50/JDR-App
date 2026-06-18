@@ -11,6 +11,7 @@ import { PLAYER_TUTORIAL, GM_TUTORIAL, BASE_CAMPAIGN_DATA, TUTORIAL_CAMPAIGN_DAT
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { generateId } from '../utils/helpers';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -93,6 +94,7 @@ export const TutorialScreen: React.FC = () => {
 
   if (!type) {
     return (
+      <ThemedScreen>
       <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Tutoriels & Campagnes</Text>
         <Text style={styles.subtitle}>Apprenez à jouer ou chargez une campagne prête à l'emploi</Text>
@@ -143,12 +145,14 @@ export const TutorialScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </ThemedScreen>
     );
   }
 
   if (!section || !page) return null;
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       {/* Progress bar */}
       <View style={styles.progressBar}>
@@ -207,11 +211,12 @@ export const TutorialScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: 48 },
   title: { ...typography.h3, color: colors.primary, textAlign: 'center', marginBottom: 4 },
   subtitle: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginBottom: spacing.lg },

@@ -17,6 +17,7 @@ import { FAB } from '../components/common/FAB';
 import { EmptyState } from '../components/common/EmptyState';
 import { Badge } from '../components/common/Badge';
 import { SectionHeader } from '../components/common/SectionHeader';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 const SYSTEMS = ['D&D 5e', 'Pathfinder', 'Pathfinder 2e', 'Warhammer', 'Call of Cthulhu', 'Personnalisé'];
 
@@ -207,6 +208,7 @@ export const CampaignScreen: React.FC = () => {
   if (view === 'detail' && selectedCampaign) {
     const campaign = campaigns.find((c) => c.id === selectedCampaign.id) ?? selectedCampaign;
     return (
+      <ThemedScreen>
       <View style={styles.container}>
         <View style={styles.detailHeader}>
           <TouchableOpacity onPress={() => setView('list')} style={styles.backBtn}>
@@ -325,10 +327,12 @@ export const CampaignScreen: React.FC = () => {
           )}
         </Modal>
       </View>
+      </ThemedScreen>
     );
   }
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       <FlatList
         data={campaigns}
@@ -375,11 +379,12 @@ export const CampaignScreen: React.FC = () => {
         )}
       </Modal>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   list: { padding: spacing.md, paddingBottom: 80 },
   card: {
     backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md,

@@ -6,6 +6,7 @@ import { addCampaign } from '../store/slices/campaignSlice';
 import { DRAGON_BALL_CAMPAIGN } from '../data/dragonBallCampaign';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { triggerEffect } from '../utils/effectSystem';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 interface ThemeDef {
   id: AppTheme;
@@ -79,6 +80,7 @@ export const ThemesScreen: React.FC = () => {
   };
 
   return (
+    <ThemedScreen>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Thèmes visuels</Text>
       <Text style={styles.subtitle}>Personnalisez l'apparence de l'application</Text>
@@ -119,16 +121,6 @@ export const ThemesScreen: React.FC = () => {
               {theme.secret && <Text style={styles.secretBadge}>(Secret)</Text>}
             </View>
             <Text style={styles.themeDesc}>{theme.description}</Text>
-            {theme.id === 'legendary' && secretUnlocked && activeTheme === 'legendary' && !secretCampaignUnlocked && (
-              <View style={styles.tapHintRow}>
-                <Text style={styles.tapHintText}>
-                  🐉 Appuyez encore pour débloquer... ({secretCampaignTapCount}/50)
-                </Text>
-                <View style={styles.tapProgress}>
-                  <View style={[styles.tapFill, { width: `${(secretCampaignTapCount / 50) * 100}%` }]} />
-                </View>
-              </View>
-            )}
           </View>
           {activeTheme === theme.id && (
             <View style={styles.activeMark}>
@@ -160,11 +152,12 @@ export const ThemesScreen: React.FC = () => {
         Note : Les thèmes personnalisent les couleurs de navigation et d'accentuation. Un redémarrage peut être nécessaire pour l'effet complet.
       </Text>
     </ScrollView>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: 48 },
   title: { ...typography.h3, color: colors.primary, textAlign: 'center', marginBottom: 4 },
   subtitle: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginBottom: spacing.lg },

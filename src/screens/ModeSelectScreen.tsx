@@ -8,6 +8,7 @@ import { setAppMode, AppMode } from '../store/slices/appModeSlice';
 import { selectCharacter } from '../store/slices/charactersSlice';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { useBackHandler } from '../hooks/useBackHandler';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 const MODES: {
   mode: AppMode;
@@ -52,8 +53,8 @@ export const ModeSelectScreen: React.FC = () => {
   }, [dispatch]));
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+    <ThemedScreen>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" />
       <LinearGradient
         colors={[colors.background, colors.surfaceVariant, colors.background]}
         locations={[0, 0.5, 1]}
@@ -97,12 +98,12 @@ export const ModeSelectScreen: React.FC = () => {
           <Text style={styles.backLinkText}>⟵ Changer de personnage</Text>
         </TouchableOpacity>
       </SafeAreaView>
-    </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   safe: { flex: 1 },
   header: { alignItems: 'center', paddingTop: spacing.xl, paddingBottom: spacing.lg, paddingHorizontal: spacing.lg },
   titleDecorator: { color: colors.primaryDark, fontSize: 14, letterSpacing: 8, marginVertical: 4 },

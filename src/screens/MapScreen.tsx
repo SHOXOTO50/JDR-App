@@ -16,6 +16,7 @@ import { Modal } from '../components/common/Modal';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { EmptyState } from '../components/common/EmptyState';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 const MARKER_COLORS = [colors.error, colors.primary, colors.secondary, colors.success, colors.mana, colors.warning];
 const MARKER_ICONS = ['📍', '⚔️', '💀', '🏰', '💰', '🚪', '⭐', '🔥', '🛖', '👹', '❓', '🗝️'];
@@ -150,6 +151,7 @@ export const MapScreen: React.FC = () => {
 
   if (maps.length === 0) {
     return (
+      <ThemedScreen>
       <View style={styles.container}>
         <View style={styles.banner}>
           <Text style={styles.bannerLabel}>CAMPAGNE</Text>
@@ -164,10 +166,12 @@ export const MapScreen: React.FC = () => {
         />
         {renderNewMapModal()}
       </View>
+      </ThemedScreen>
     );
   }
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       <View style={styles.banner}>
         <Text style={styles.bannerLabel}>CAMPAGNE</Text>
@@ -291,11 +295,12 @@ export const MapScreen: React.FC = () => {
 
       {renderNewMapModal()}
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   banner: {
     backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     borderBottomWidth: 1, borderBottomColor: colors.border,

@@ -19,6 +19,7 @@ import { Button } from '../components/common/Button';
 import { FAB } from '../components/common/FAB';
 import { EmptyState } from '../components/common/EmptyState';
 import { Badge } from '../components/common/Badge';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 const CATEGORIES: { key: ItemCategory | 'all'; label: string }[] = [
   { key: 'all', label: 'Tous' },
@@ -199,6 +200,7 @@ export const InventoryScreen: React.FC = () => {
   };
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       {/* Search + Library button */}
       <View style={styles.topBar}>
@@ -294,11 +296,12 @@ export const InventoryScreen: React.FC = () => {
         )}
       </Modal>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   topBar: {
     flexDirection: 'row', alignItems: 'center',
     margin: spacing.md, marginBottom: spacing.sm,

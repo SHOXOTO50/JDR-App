@@ -23,6 +23,7 @@ import { Badge } from '../components/common/Badge';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -98,6 +99,7 @@ export const CharacterSheetScreen: React.FC = () => {
   }, {});
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {/* Header */}
@@ -488,6 +490,7 @@ export const CharacterSheetScreen: React.FC = () => {
         }}
       />
     </View>
+    </ThemedScreen>
   );
 };
 
@@ -527,7 +530,7 @@ const CurrencyModal = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   header: {
     flexDirection: 'row',

@@ -21,6 +21,7 @@ import { deleteQuestsByCharacter } from '../store/slices/questsSlice';
 import { Character } from '../types';
 import { colors, borderRadius, shadows, spacing, typography } from '../theme';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -110,6 +111,7 @@ export const CharacterSelectScreen: React.FC = () => {
   };
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       <LinearGradient
@@ -178,11 +180,12 @@ export const CharacterSelectScreen: React.FC = () => {
         </View>
       </SafeAreaView>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   safe: { flex: 1 },
   header: {
     alignItems: 'center',

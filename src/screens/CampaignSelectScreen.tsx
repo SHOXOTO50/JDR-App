@@ -17,8 +17,18 @@ import { Modal } from '../components/common/Modal';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { useBackHandler } from '../hooks/useBackHandler';
+import { ThemedScreen } from '../components/ThemedScreen';
+import { DRAGON_BALL_CAMPAIGN } from '../data/dragonBallCampaign';
 
 const SYSTEMS = ['D&D 5e', 'Pathfinder', 'Pathfinder 2e', 'Warhammer', 'Call of Cthulhu', 'Personnalisé'];
+
+type CampaignType = 'fantasy' | 'dragonball' | 'custom';
+
+const CAMPAIGN_TYPES: { type: CampaignType; icon: string; label: string; desc: string; system: string }[] = [
+  { type: 'fantasy', icon: '🏰', label: 'Fantasy', desc: 'D&D, Pathfinder, Warhammer...', system: 'D&D 5e' },
+  { type: 'dragonball', icon: '🐉', label: 'Dragon Ball', desc: 'Système DBZ personnalisé', system: 'Dragon Ball RPG (Personnalisé)' },
+  { type: 'custom', icon: '⚙️', label: 'Personnalisé', desc: 'Votre propre système', system: 'Personnalisé' },
+];
 
 const makeCampaign = (): Campaign => ({
   id: generateId(),
@@ -49,6 +59,7 @@ export const CampaignSelectScreen: React.FC = () => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [draft, setDraft] = useState<Campaign>(makeCampaign());
+  const [campaignType, setCampaignType] = useState<CampaignType>('fantasy');
 
   useBackHandler(useCallback(() => {
     dispatch(setAppMode(null));
@@ -57,7 +68,14 @@ export const CampaignSelectScreen: React.FC = () => {
 
   const openCreate = () => {
     setDraft(makeCampaign());
+    setCampaignType('fantasy');
     setModalVisible(true);
+  };
+
+  const handleTypeSelect = (type: CampaignType) => {
+    const def = CAMPAIGN_TYPES.find((t) => t.type === type)!;
+    setCampaignType(type);
+    setDraft((d) => ({ ...d, system: def.system }));
   };
 
   const handleCreate = () => {
@@ -87,8 +105,8 @@ export const CampaignSelectScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+    <ThemedScreen>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" />
       <LinearGradient
         colors={[colors.background, colors.surfaceVariant, colors.background]}
         locations={[0, 0.5, 1]}
@@ -171,26 +189,41 @@ export const CampaignSelectScreen: React.FC = () => {
       </SafeAreaView>
 
       <Modal visible={modalVisible} onClose={() => setModalVisible(false)} title="Nouvelle campagne">
-        <Input label="Nom de la campagne *" value={draft.name} onChangeText={(v) => setDraft({ ...draft, name: v })} placeholder="La Malédiction de Strahd..." />
-        <Input label="Description" value={draft.description} onChangeText={(v) => setDraft({ ...draft, description: v })} multiline numberOfLines={3} placeholder="Résumé de la campagne..." />
-        <Input label="Maître du Jeu" value={draft.gmName ?? ''} onChangeText={(v) => setDraft({ ...draft, gmName: v })} placeholder="Nom du MJ" />
-        <Text style={styles.fieldLabel}>Système de jeu</Text>
-        <View style={styles.selectRow}>
-          {SYSTEMS.map((s) => (
-            <TouchableOpacity key={s} onPress={() => setDraft({ ...draft, system: s })}
-              style={[styles.selectChip, draft.system === s && styles.selectChipActive]}>
-              <Text style={[styles.selectChipText, draft.system === s && styles.selectChipTextActive]}>{s}</Text>
+        <Text style={styles.fieldLabel}>Type de campagne</Text>
+        <View style={styles.typeRow}>
+          {CAMPAIGN_TYPES.map((t) => (
+            <TouchableOpacity key={t.type} onPress={() => handleTypeSelect(t.type)}
+              style={[styles.typeCard, campaignType === t.type && styles.typeCardActive]}>
+              <Text style={styles.typeCardIcon}>{t.icon}</Text>
+              <Text style={[styles.typeCardLabel, campaignType === t.type && styles.typeCardLabelActive]}>{t.label}</Text>
+              <Text style={styles.typeCardDesc}>{t.desc}</Text>
             </TouchableOpacity>
           ))}
         </View>
+        <Input label="Nom de la campagne *" value={draft.name} onChangeText={(v) => setDraft({ ...draft, name: v })} placeholder="La Malédiction de Strahd..." />
+        <Input label="Description" value={draft.description} onChangeText={(v) => setDraft({ ...draft, description: v })} multiline numberOfLines={3} placeholder="Résumé de la campagne..." />
+        <Input label="Maître du Jeu" value={draft.gmName ?? ''} onChangeText={(v) => setDraft({ ...draft, gmName: v })} placeholder="Nom du MJ" />
+        {campaignType === 'fantasy' && (
+          <>
+            <Text style={styles.fieldLabel}>Système de jeu</Text>
+            <View style={styles.selectRow}>
+              {SYSTEMS.filter((s) => s !== 'Personnalisé').map((s) => (
+                <TouchableOpacity key={s} onPress={() => setDraft({ ...draft, system: s })}
+                  style={[styles.selectChip, draft.system === s && styles.selectChipActive]}>
+                  <Text style={[styles.selectChipText, draft.system === s && styles.selectChipTextActive]}>{s}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
         <Button label="Créer et commencer" onPress={handleCreate} fullWidth />
       </Modal>
-    </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   safe: { flex: 1 },
   header: { alignItems: 'center', paddingTop: spacing.xl, paddingBottom: spacing.lg, paddingHorizontal: spacing.lg },
   titleDecorator: { color: colors.primaryDark, fontSize: 14, letterSpacing: 8, marginVertical: 4 },
@@ -244,4 +277,14 @@ const styles = StyleSheet.create({
   selectChipActive: { borderColor: colors.primary, backgroundColor: colors.primaryDark + '33' },
   selectChipText: { ...typography.bodySmall, color: colors.textMuted, fontWeight: '600' },
   selectChipTextActive: { color: colors.primary },
+  typeRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.md },
+  typeCard: {
+    flex: 1, alignItems: 'center', padding: spacing.sm, borderRadius: borderRadius.lg,
+    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceVariant,
+  },
+  typeCardActive: { borderColor: colors.primary, backgroundColor: colors.primaryDark + '33' },
+  typeCardIcon: { fontSize: 22, marginBottom: 4 },
+  typeCardLabel: { ...typography.bodySmall, color: colors.textMuted, fontWeight: '700' },
+  typeCardLabelActive: { color: colors.primary },
+  typeCardDesc: { ...typography.caption, color: colors.textMuted, textAlign: 'center', marginTop: 2 },
 });

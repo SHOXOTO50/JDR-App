@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAppSelector, useAppDispatch } from '../store';
 import { setAppMode } from '../store/slices/appModeSlice';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { MainTabNavigator } from './MainTabNavigator';
 import { CharacterSelectScreen } from '../screens/CharacterSelectScreen';
 import { CampaignSelectScreen } from '../screens/CampaignSelectScreen';
@@ -21,14 +22,15 @@ import { NameGeneratorScreen } from '../screens/NameGeneratorScreen';
 import { EncounterTableScreen } from '../screens/EncounterTableScreen';
 import { EquipmentLibraryScreen } from '../screens/EquipmentLibraryScreen';
 import { TutorialScreen } from '../screens/TutorialScreen';
+import { TutorialOfferScreen } from '../screens/TutorialOfferScreen';
 import { PatchNotesScreen } from '../screens/PatchNotesScreen';
 import { ThemesScreen } from '../screens/ThemesScreen';
 import { XPCalculatorScreen } from '../screens/XPCalculatorScreen';
-import { colors } from '../theme';
 
 export type RootStackParamList = {
   CharacterSelect: undefined;
   ModeSelect: undefined;
+  TutorialOffer: undefined;
   CampaignSelect: undefined;
   CreateCharacter: { characterId?: string } | undefined;
   Main: undefined;
@@ -53,16 +55,17 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const GateBackButton: React.FC = () => {
   const dispatch = useAppDispatch();
+  const { colors } = useAppTheme();
   return (
     <TouchableOpacity onPress={() => dispatch(setAppMode(null))} style={gateStyles.backButton}>
-      <Text style={gateStyles.backButtonText}>⟵</Text>
+      <Text style={[gateStyles.backButtonText, { color: colors.primary }]}>⟵</Text>
     </TouchableOpacity>
   );
 };
 
 const gateStyles = StyleSheet.create({
   backButton: { paddingHorizontal: 4, paddingVertical: 4 },
-  backButtonText: { color: colors.primary, fontSize: 22, fontWeight: '700' },
+  backButtonText: { fontSize: 22, fontWeight: '700' },
 });
 
 export const AppNavigator: React.FC = () => {
@@ -70,6 +73,20 @@ export const AppNavigator: React.FC = () => {
   const activeCampaignId = useAppSelector((s) => s.campaign.activeCampaignId);
   const mode = useAppSelector((s) => s.appMode.mode);
   const groupReady = useAppSelector((s) => s.appMode.groupReady);
+  const tutorialSeen = useAppSelector((s) => s.appMode.tutorialSeen);
+  const { colors } = useAppTheme();
+
+  const navTheme = {
+    dark: true,
+    colors: {
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+      notification: colors.secondary,
+    },
+  };
 
   const renderScreens = () => {
     // Step 1: no character → character selection
@@ -118,7 +135,18 @@ export const AppNavigator: React.FC = () => {
       );
     }
 
-    // Step 4: no active campaign yet → campaign selection
+    // Step 4: solo first launch → tutorial offer
+    if (mode === 'solo' && !tutorialSeen && !activeCampaignId) {
+      return (
+        <Stack.Screen
+          name="TutorialOffer"
+          component={TutorialOfferScreen}
+          options={{ headerShown: false }}
+        />
+      );
+    }
+
+    // Step 5: no active campaign yet → campaign selection
     if (!activeCampaignId) {
       return (
         <Stack.Screen
@@ -129,7 +157,7 @@ export const AppNavigator: React.FC = () => {
       );
     }
 
-    // Step 5: full app
+    // Step 6: full app
     return (
       <>
         <Stack.Screen name="Main" component={MainTabNavigator} options={{ headerShown: false }} />
@@ -158,19 +186,7 @@ export const AppNavigator: React.FC = () => {
   };
 
   return (
-    <NavigationContainer
-      theme={{
-        dark: true,
-        colors: {
-          primary: colors.primary,
-          background: colors.background,
-          card: colors.surface,
-          text: colors.text,
-          border: colors.border,
-          notification: colors.accent,
-        },
-      }}
-    >
+    <NavigationContainer theme={navTheme}>
       <Stack.Navigator
         screenOptions={{
           headerStyle: { backgroundColor: colors.surface },

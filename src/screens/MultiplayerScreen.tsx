@@ -18,6 +18,7 @@ import { FAB } from '../components/common/FAB';
 import { EmptyState } from '../components/common/EmptyState';
 import { useBackHandler } from '../hooks/useBackHandler';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -94,6 +95,7 @@ export const MultiplayerScreen: React.FC = () => {
   };
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       <View style={styles.banner}>
         <Text style={styles.bannerLabel}>{isSetupGate ? 'CONFIGURATION DU GROUPE' : 'GROUPE · CAMPAGNE'}</Text>
@@ -247,11 +249,12 @@ export const MultiplayerScreen: React.FC = () => {
         )}
       </Modal>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   banner: {
     backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     borderBottomWidth: 1, borderBottomColor: colors.border,

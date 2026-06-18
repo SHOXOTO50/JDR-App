@@ -2,8 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { PATCH_NOTES } from '../data/patchNotes';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 export const PatchNotesScreen: React.FC = () => (
+  <ThemedScreen>
   <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
     <Text style={styles.header}>Historique des versions</Text>
     {PATCH_NOTES.map((note, i) => (
@@ -25,10 +27,11 @@ export const PatchNotesScreen: React.FC = () => (
     ))}
     <Text style={styles.footer}>DiceQuest — Créé avec ❤️ par SHOXOTO</Text>
   </ScrollView>
+  </ThemedScreen>
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: 48 },
   header: { ...typography.h3, color: colors.primary, textAlign: 'center', marginBottom: spacing.lg },
   card: {

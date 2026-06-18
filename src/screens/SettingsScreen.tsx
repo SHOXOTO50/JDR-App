@@ -14,6 +14,7 @@ import { setEffectsEnabled } from '../utils/effectSystem';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { formatDate } from '../utils/helpers';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -98,6 +99,7 @@ export const SettingsScreen: React.FC = () => {
   };
 
   return (
+    <ThemedScreen>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {/* Current character */}
       {currentCharacter && (
@@ -204,11 +206,12 @@ export const SettingsScreen: React.FC = () => {
         <Text style={styles.footerLove}>Créé avec ❤️ pour les aventuriers et les passionnés de D&D</Text>
       </View>
     </ScrollView>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: 48 },
   charCard: {
     backgroundColor: colors.card,

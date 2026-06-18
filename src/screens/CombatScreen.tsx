@@ -19,6 +19,7 @@ import { Badge } from '../components/common/Badge';
 import { EmptyState } from '../components/common/EmptyState';
 import { Modal } from '../components/common/Modal';
 import { triggerEffect } from '../utils/effectSystem';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 const defaultCombat = (characterId: string): CombatStateType => ({
   id: generateId(),
@@ -225,7 +226,7 @@ export const CombatScreen: React.FC = () => {
 
   if (!activeCombat) {
     return (
-      <View style={styles.container}>
+      <ThemedScreen style={styles.container}>
         <EmptyState
           icon="⚔️"
           title="Aucun combat en cours"
@@ -244,14 +245,14 @@ export const CombatScreen: React.FC = () => {
             ))}
           </View>
         )}
-      </View>
+      </ThemedScreen>
     );
   }
 
   const timerColor = timerSeconds <= 10 ? colors.error : timerSeconds <= 20 ? colors.warning : colors.success;
 
   return (
-    <View style={styles.container}>
+    <ThemedScreen style={styles.container}>
       {/* Combat header */}
       <View style={styles.combatHeader}>
         <View style={styles.roundBox}>
@@ -422,12 +423,12 @@ export const CombatScreen: React.FC = () => {
           </View>
         </View>
       </RNModal>
-    </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   combatHeader: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: colors.card, padding: spacing.sm,

@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
 } from 'react-native';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 const XP_THRESHOLDS: Record<number, { easy: number; medium: number; hard: number; deadly: number; toNext: number }> = {
   1:  { easy: 25,    medium: 50,    hard: 75,    deadly: 100,   toNext: 300 },
@@ -98,6 +99,7 @@ export const XPCalculatorScreen: React.FC = () => {
   };
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       <View style={styles.tabs}>
         <TouchableOpacity onPress={() => setTab('encounter')} style={[styles.tab, tab === 'encounter' && styles.tabActive]}>
@@ -212,11 +214,12 @@ export const XPCalculatorScreen: React.FC = () => {
         )}
       </ScrollView>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border },
   tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
   tabActive: { borderBottomWidth: 2, borderBottomColor: colors.primary },

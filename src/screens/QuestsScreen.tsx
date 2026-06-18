@@ -16,6 +16,9 @@ import { FAB } from '../components/common/FAB';
 import { EmptyState } from '../components/common/EmptyState';
 import { Badge } from '../components/common/Badge';
 import { SectionHeader } from '../components/common/SectionHeader';
+import { ThemedScreen } from '../components/ThemedScreen';
+import { useCampaignMode } from '../hooks/useCampaignMode';
+import { DB_QUEST_TEMPLATES } from '../data/dragonBallQuests';
 
 const STATUS_TABS: { key: QuestStatus | 'all'; label: string; icon: string }[] = [
   { key: 'all', label: 'Toutes', icon: '📜' },
@@ -126,6 +129,35 @@ export const QuestsScreen: React.FC = () => {
   const currentId = useAppSelector((s) => s.characters.currentCharacterId) ?? '';
   const allQuests = useAppSelector((s) => s.quests.quests);
   const quests = allQuests.filter((q) => q.characterId === currentId);
+  const { isDB } = useCampaignMode();
+
+  const loadDBQuests = () => {
+    const existing = new Set(quests.map((q) => q.title));
+    const now = new Date().toISOString();
+    let added = 0;
+    DB_QUEST_TEMPLATES.forEach((t) => {
+      if (!existing.has(t.title)) {
+        dispatch(addQuest({
+          id: generateId(),
+          characterId: currentId,
+          title: t.title,
+          description: t.description,
+          reward: t.reward,
+          status: 'active',
+          type: t.type,
+          objectives: t.objectives.map((o) => ({ id: generateId(), description: o, completed: false })),
+          createdAt: now,
+          updatedAt: now,
+        }));
+        added++;
+      }
+    });
+    if (added === 0) {
+      Alert.alert('Quêtes DB déjà chargées', 'Toutes les quêtes Dragon Ball sont déjà dans votre liste.');
+    } else {
+      Alert.alert('🐉 Quêtes Dragon Ball !', `${added} quête${added > 1 ? 's' : ''} Dragon Ball ajoutée${added > 1 ? 's' : ''}.`);
+    }
+  };
 
   const [statusFilter, setStatusFilter] = useState<QuestStatus | 'all'>('all');
   const [modalVisible, setModalVisible] = useState(false);
@@ -200,6 +232,7 @@ export const QuestsScreen: React.FC = () => {
   };
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       {/* Status tabs */}
       <FlatList
@@ -243,6 +276,12 @@ export const QuestsScreen: React.FC = () => {
           />
         }
       />
+
+      {isDB && (
+        <TouchableOpacity style={styles.dbQuestsBtn} onPress={loadDBQuests}>
+          <Text style={styles.dbQuestsBtnText}>🐉 Charger les quêtes Dragon Ball</Text>
+        </TouchableOpacity>
+      )}
 
       <FAB onPress={openCreate} />
 
@@ -317,11 +356,12 @@ export const QuestsScreen: React.FC = () => {
         )}
       </Modal>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   tabList: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 8 },
   statusTab: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: borderRadius.round,
@@ -361,6 +401,13 @@ const styles = StyleSheet.create({
   quickBtnFail: { backgroundColor: colors.error + '22', borderColor: colors.error },
   quickBtnText: { ...typography.bodySmall, color: colors.success, fontWeight: '700' },
   quickBtnFailText: { color: colors.error },
+  dbQuestsBtn: {
+    marginHorizontal: spacing.md, marginBottom: spacing.sm,
+    backgroundColor: '#1A0010', borderRadius: borderRadius.lg,
+    paddingVertical: 12, alignItems: 'center',
+    borderWidth: 1, borderColor: '#FFD700',
+  },
+  dbQuestsBtnText: { color: '#FFD700', fontWeight: '700', fontSize: 14 },
   objectiveRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
   objCheck: {
     width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border,

@@ -13,6 +13,7 @@ import { generateId, DEFAULT_DND_STATS, DEFAULT_DND_SKILLS, getProficiencyBonus 
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 type RouteType = RouteProp<RootStackParamList, 'CreateCharacter'>;
 
@@ -255,6 +256,7 @@ export const CreateCharacterScreen: React.FC = () => {
   const steps: Record<number, React.ReactNode> = { 0: renderStep0(), 1: renderStep1(), 2: renderStep2(), 3: renderStep3() };
 
   return (
+    <ThemedScreen>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.container}>
         <View style={styles.header}>
@@ -285,11 +287,12 @@ export const CreateCharacterScreen: React.FC = () => {
         </View>
       </View>
     </KeyboardAvoidingView>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

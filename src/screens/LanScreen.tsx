@@ -15,6 +15,7 @@ import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { useBackHandler } from '../hooks/useBackHandler';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -176,6 +177,7 @@ export const LanScreen: React.FC = () => {
 
   if (!lan.available) {
     return (
+      <ThemedScreen>
       <View style={styles.container}>
         {renderBanner()}
         <View style={styles.centerBox}>
@@ -187,11 +189,13 @@ export const LanScreen: React.FC = () => {
         </View>
         {renderGateFooter()}
       </View>
+      </ThemedScreen>
     );
   }
 
   if (lan.mode === 'hosting') {
     return (
+      <ThemedScreen>
       <View style={styles.container}>
         {renderBanner()}
         <ScrollView contentContainerStyle={styles.content}>
@@ -219,11 +223,13 @@ export const LanScreen: React.FC = () => {
         </ScrollView>
         {renderGateFooter()}
       </View>
+      </ThemedScreen>
     );
   }
 
   if (lan.mode === 'joining' || lan.mode === 'connected') {
     return (
+      <ThemedScreen>
       <View style={styles.container}>
         {renderBanner()}
         <ScrollView contentContainerStyle={styles.content}>
@@ -246,11 +252,13 @@ export const LanScreen: React.FC = () => {
         </ScrollView>
         {renderGateFooter()}
       </View>
+      </ThemedScreen>
     );
   }
 
   if (lan.mode === 'kicked') {
     return (
+      <ThemedScreen>
       <View style={styles.container}>
         {renderBanner()}
         <View style={styles.centerBox}>
@@ -261,11 +269,13 @@ export const LanScreen: React.FC = () => {
         </View>
         {renderGateFooter()}
       </View>
+      </ThemedScreen>
     );
   }
 
   // mode 'idle' ou 'error'
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       {renderBanner()}
       <ScrollView contentContainerStyle={styles.content}>
@@ -347,11 +357,12 @@ export const LanScreen: React.FC = () => {
         {renderGateFooter()}
       </ScrollView>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   banner: {
     backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     borderBottomWidth: 1, borderBottomColor: colors.border,

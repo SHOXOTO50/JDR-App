@@ -5,11 +5,13 @@ export type AppMode = 'solo' | 'local' | 'passplay';
 interface AppModeState {
   mode: AppMode | null;
   groupReady: boolean;
+  tutorialSeen: boolean;
 }
 
 const initialState: AppModeState = {
   mode: null,
   groupReady: false,
+  tutorialSeen: false,
 };
 
 const appModeSlice = createSlice({
@@ -23,8 +25,11 @@ const appModeSlice = createSlice({
     setGroupReady(state, action: PayloadAction<boolean>) {
       state.groupReady = action.payload;
     },
+    setTutorialSeen(state) {
+      state.tutorialSeen = true;
+    },
   },
 });
 
-export const { setAppMode, setGroupReady } = appModeSlice.actions;
+export const { setAppMode, setGroupReady, setTutorialSeen } = appModeSlice.actions;
 export default appModeSlice.reducer;

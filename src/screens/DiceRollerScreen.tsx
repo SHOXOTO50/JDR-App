@@ -15,6 +15,7 @@ import { formatDateTime } from '../utils/helpers';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { DiceRoll } from '../types';
 import { Alert } from 'react-native';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -144,6 +145,7 @@ export const DiceRollerScreen: React.FC = () => {
   const hasDice = Object.values(diceCounts).some((c) => c > 0);
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       {/* Tabs */}
       <View style={styles.tabs}>
@@ -309,11 +311,12 @@ export const DiceRollerScreen: React.FC = () => {
         )}
       </ScrollView>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border },
   tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
   tabActive: { borderBottomWidth: 2, borderBottomColor: colors.primary },

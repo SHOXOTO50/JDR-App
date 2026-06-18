@@ -7,6 +7,21 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '2.0.1',
+    date: 'Juin 2026',
+    highlights: '🎨 Corrections et améliorations v2.0.1',
+    changes: [
+      '🎨 Système de thèmes global — les thèmes changent instantanément toutes les fenêtres',
+      '🐉 Mode Dragon Ball — campagne, quêtes et équipement DB dans leurs écrans respectifs',
+      '🧭 Flux premier lancement repensé — création de personnage → mode → tutoriel → campagne',
+      '🎓 Offre de tutoriel au premier lancement en mode Solo',
+      '🏰 Création de campagne améliorée — sélecteur de type : Fantasy, Dragon Ball, Personnalisé',
+      '🔐 Easter eggs rendus vraiment secrets — suppression de tous les compteurs visibles',
+      '🛡️ SafeAreaView et protection des bordures sur tous les écrans',
+      '✅ Corrections de bugs : TimerCombat, GMScreen, InventoryScreen',
+    ],
+  },
+  {
     version: '2.0.0',
     date: 'Juin 2026',
     highlights: '🚀 Version majeure — DiceQuest 2.0',

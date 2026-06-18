@@ -1,7 +1,8 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ImageBackground,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert,
 } from 'react-native';
+import { ThemedScreen } from '../components/ThemedScreen';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppSelector, useAppDispatch } from '../store';
@@ -35,7 +36,6 @@ export const MoreScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const lan = useLan();
   const isLanClient = lan.mode === 'connected';
-  const activeTheme = useAppSelector((s) => s.theme.activeTheme);
   const secretUnlocked = useAppSelector((s) => s.theme.secretUnlocked);
   const tapCount = useAppSelector((s) => s.theme.secretTapCount);
 
@@ -87,9 +87,8 @@ export const MoreScreen: React.FC = () => {
     }
   };
 
-  const showLegendaryBg = activeTheme === 'legendary' && secretUnlocked;
-
-  const inner = (
+  return (
+    <ThemedScreen>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {character && (
         <View style={styles.charSummary}>
@@ -151,31 +150,17 @@ export const MoreScreen: React.FC = () => {
       <MenuCard icon="🗺️" title="Changer de campagne" subtitle={activeCampaign ? activeCampaign.name : 'Retour à la sélection'} color={colors.secondary} onPress={handleSwitchCampaign} />
 
       <TouchableOpacity onPress={handleSecretTap} activeOpacity={0.9} style={styles.footerBtn}>
-        <Text style={styles.version}>DiceQuest v2.0.0</Text>
+        <Text style={styles.version}>DiceQuest v2.0.1</Text>
         <Text style={styles.versionAuthor}>Créé par SHOXOTO</Text>
         <Text style={styles.versionLove}>Créé avec ❤️ pour les aventuriers et les passionnés de D&D</Text>
-        {tapCount > 0 && tapCount < 7 && (
-          <Text style={styles.tapHint}>({tapCount}/7)</Text>
-        )}
       </TouchableOpacity>
     </ScrollView>
+    </ThemedScreen>
   );
-
-  if (showLegendaryBg) {
-    return (
-      <ImageBackground source={require('../../assets/secret-bg.jpg')} style={styles.fullBg} resizeMode="cover">
-        <View style={styles.bgOverlay}>{inner}</View>
-      </ImageBackground>
-    );
-  }
-
-  return inner;
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent' },
-  fullBg: { flex: 1 },
-  bgOverlay: { flex: 1, backgroundColor: 'rgba(10,0,5,0.75)' },
+  container: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: 40 },
   charSummary: {
     backgroundColor: colors.card, borderRadius: borderRadius.xl,

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { TERRAINS, DIFFICULTIES, LEVEL_RANGES, rollEncounter, Terrain, Difficulty, LevelRange, Encounter } from '../data/encounterTables';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 export const EncounterTableScreen: React.FC = () => {
   const [terrain, setTerrain] = useState<Terrain>('foret');
@@ -16,6 +17,7 @@ export const EncounterTableScreen: React.FC = () => {
   const diffColor = DIFFICULTIES.find((d) => d.key === difficulty)?.color ?? colors.primary;
 
   return (
+    <ThemedScreen>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Table de Rencontres</Text>
       <Text style={styles.subtitle}>Générez une rencontre selon le terrain et le niveau</Text>
@@ -93,11 +95,12 @@ export const EncounterTableScreen: React.FC = () => {
         </View>
       )}
     </ScrollView>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: 48 },
   title: { ...typography.h3, color: colors.primary, textAlign: 'center', marginBottom: 4 },
   subtitle: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginBottom: spacing.lg },

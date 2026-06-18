@@ -25,6 +25,7 @@ import { Button } from '../components/common/Button';
 import { FAB } from '../components/common/FAB';
 import { EmptyState } from '../components/common/EmptyState';
 import { Badge } from '../components/common/Badge';
+import { ThemedScreen } from '../components/ThemedScreen';
 
 type GMTab = 'npcs' | 'monsters' | 'factions' | 'locations' | 'notes' | 'tools' | 'group';
 
@@ -371,6 +372,7 @@ export const GMScreen: React.FC = () => {
   const isEditing = editingItem && currentData.find((i: any) => i.id === editingItem.id);
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
       {/* Active campaign banner */}
       <View style={styles.campaignBanner}>
@@ -537,11 +539,12 @@ export const GMScreen: React.FC = () => {
         </View>
       </Modal>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   campaignBanner: {
     backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     borderBottomWidth: 1, borderBottomColor: colors.border,

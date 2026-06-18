@@ -10,6 +10,9 @@ import {
 } from '../data/equipmentLibrary';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { generateId } from '../utils/helpers';
+import { ThemedScreen } from '../components/ThemedScreen';
+import { useCampaignMode } from '../hooks/useCampaignMode';
+import { DRAGON_BALL_ITEMS, DRAGON_BALL_TECHNIQUES } from '../data/dragonBallCampaign';
 
 const RARITY_ORDER: Rarity[] = ['standard', 'commun', 'peu commun', 'rare', 'très rare', 'légendaire'];
 
@@ -22,6 +25,7 @@ export const EquipmentLibraryScreen: React.FC = () => {
   const [selectedRarity, setSelectedRarity] = useState<Rarity | 'all'>('all');
   const [detailItem, setDetailItem] = useState<LibraryItem | null>(null);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  const { isDB } = useCampaignMode();
 
   const filtered = useMemo(() => {
     return EQUIPMENT_LIBRARY.filter((item) => {
@@ -66,6 +70,28 @@ export const EquipmentLibraryScreen: React.FC = () => {
     Alert.alert('Ajouté !', `"${item.name}" ajouté à l'inventaire de votre personnage.`);
   };
 
+  const loadDBItems = () => {
+    if (!currentId) { Alert.alert('Aucun personnage', 'Sélectionnez un personnage actif.'); return; }
+    const allDB = [...DRAGON_BALL_ITEMS, ...DRAGON_BALL_TECHNIQUES];
+    allDB.forEach((item) => {
+      dispatch(addItem({
+        id: generateId(),
+        characterId: currentId,
+        name: item.name,
+        description: item.description,
+        quantity: 1,
+        weight: 'weight' in item ? (item.weight as number) : 0,
+        value: 'value' in item ? (item.value as number) : 0,
+        rarity: item.rarity === 'artefact' ? 'legendaire' : (item.rarity as import('../types').ItemRarity),
+        equipped: false,
+        category: item.category as import('../types').ItemCategory,
+        notes: '',
+        properties: [],
+      }));
+    });
+    Alert.alert('🐉 Équipement Dragon Ball !', `${allDB.length} objets et techniques Dragon Ball ajoutés à votre inventaire.`);
+  };
+
   const usedCategories = useMemo(() => {
     const cats = new Set(filtered.map((i) => i.category));
     return ITEM_CATEGORIES_ORDER.filter((c) => cats.has(c));
@@ -92,7 +118,14 @@ export const EquipmentLibraryScreen: React.FC = () => {
   );
 
   return (
+    <ThemedScreen>
     <View style={styles.container}>
+      {isDB && (
+        <TouchableOpacity style={styles.dbBanner} onPress={loadDBItems}>
+          <Text style={styles.dbBannerText}>🐉 Ajouter l'équipement Dragon Ball à l'inventaire</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Search */}
       <View style={styles.searchRow}>
         <TextInput
@@ -193,11 +226,12 @@ export const EquipmentLibraryScreen: React.FC = () => {
         )}
       </Modal>
     </View>
+    </ThemedScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   searchRow: { flexDirection: 'row', alignItems: 'center', margin: spacing.md, gap: 8 },
   search: {
     flex: 1, backgroundColor: colors.surfaceVariant, borderRadius: borderRadius.md,
@@ -239,6 +273,13 @@ const styles = StyleSheet.create({
   addBtnDone: { backgroundColor: colors.success + '33', borderColor: colors.success },
   addBtnText: { color: colors.primary, fontWeight: '900', fontSize: 18 },
   empty: { ...typography.body, color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.xl },
+  dbBanner: {
+    margin: spacing.md, marginBottom: 0,
+    backgroundColor: '#1A0010', borderRadius: borderRadius.lg,
+    paddingVertical: 12, alignItems: 'center',
+    borderWidth: 1, borderColor: '#FFD700',
+  },
+  dbBannerText: { color: '#FFD700', fontWeight: '700', fontSize: 14 },
   modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   modalBox: {
     backgroundColor: colors.surface, borderTopLeftRadius: borderRadius.xl, borderTopRightRadius: borderRadius.xl,
