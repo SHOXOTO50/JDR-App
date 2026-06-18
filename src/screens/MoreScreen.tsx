@@ -10,6 +10,8 @@ import { selectCharacter } from '../store/slices/charactersSlice';
 import { setActiveCampaign } from '../store/slices/campaignSlice';
 import { setAppMode } from '../store/slices/appModeSlice';
 import { tapSecret } from '../store/slices/themeSlice';
+import { startAdventure, resetAdventure } from '../store/slices/adventureSlice';
+import { AUBE_HEROS_ADVENTURE } from '../data/adventures/aube_heros';
 import { useLan } from '../net/LanContext';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -58,6 +60,8 @@ export const MoreScreen: React.FC = () => {
     const id = s.characters.currentCharacterId;
     return s.notes.notes.filter((n) => n.characterId === id).length;
   });
+  const adventureRunning = useAppSelector((s) => s.adventure.adventureId !== null && !s.adventure.isComplete);
+  const adventureComplete = useAppSelector((s) => s.adventure.isComplete);
 
   const handleSwitchCharacter = () => {
     Alert.alert('Changer de personnage', 'Retourner à la sélection de personnage ?', [
@@ -71,6 +75,33 @@ export const MoreScreen: React.FC = () => {
       { text: 'Changer', onPress: () => dispatch(setAppMode(null)) },
     ]);
   };
+  const handlePlayAdventure = () => {
+    if (adventureRunning) {
+      navigation.navigate('Adventure');
+      return;
+    }
+    if (adventureComplete) {
+      Alert.alert(
+        'Nouvelle partie ?',
+        "L'aventure précédente est terminée. Recommencer « L'Aube des Héros » depuis le début ?",
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Recommencer',
+            onPress: () => {
+              dispatch(resetAdventure());
+              dispatch(startAdventure({ adventureId: AUBE_HEROS_ADVENTURE.id, firstSceneId: AUBE_HEROS_ADVENTURE.chapters[0].firstSceneId }));
+              navigation.navigate('Adventure');
+            },
+          },
+        ]
+      );
+      return;
+    }
+    dispatch(startAdventure({ adventureId: AUBE_HEROS_ADVENTURE.id, firstSceneId: AUBE_HEROS_ADVENTURE.chapters[0].firstSceneId }));
+    navigation.navigate('Adventure');
+  };
+
   const handleSwitchCampaign = () => {
     Alert.alert('Changer de campagne', 'Retourner à la sélection de campagne ?', [
       { text: 'Annuler', style: 'cancel' },
@@ -121,6 +152,13 @@ export const MoreScreen: React.FC = () => {
       )}
 
       <Text style={styles.sectionLabel}>Combat & Aventure</Text>
+      <MenuCard
+        icon="📖"
+        title={adventureRunning ? "Reprendre l'aventure" : "L'Aube des Héros"}
+        subtitle={adventureRunning ? "Continuer votre partie en cours" : "Campagne solo · Débutant · 2–3h"}
+        color="#9b59b6"
+        onPress={handlePlayAdventure}
+      />
       <MenuCard icon="⚔️" title="Gestion du Combat" subtitle="Initiative, PV, conditions, journal" color={colors.error} onPress={() => navigation.navigate('Combat')} />
       <MenuCard icon="📜" title="Quêtes" subtitle={`${questCount} quête${questCount !== 1 ? 's' : ''} active${questCount !== 1 ? 's' : ''}`} color={colors.primary} onPress={() => navigation.navigate('Quests')} />
       <MenuCard icon="⏱️" title="Calculateur d'XP" subtitle="Difficulté de rencontre, XP par niveau" color={colors.warning} onPress={() => navigation.navigate('XPCalculator')} />

@@ -26,6 +26,7 @@ import { TutorialOfferScreen } from '../screens/TutorialOfferScreen';
 import { PatchNotesScreen } from '../screens/PatchNotesScreen';
 import { ThemesScreen } from '../screens/ThemesScreen';
 import { XPCalculatorScreen } from '../screens/XPCalculatorScreen';
+import { AdventureScreen } from '../screens/AdventureScreen';
 
 export type RootStackParamList = {
   CharacterSelect: undefined;
@@ -49,6 +50,7 @@ export type RootStackParamList = {
   PatchNotes: undefined;
   Themes: undefined;
   XPCalculator: undefined;
+  Adventure: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -181,6 +183,7 @@ export const AppNavigator: React.FC = () => {
         <Stack.Screen name="PatchNotes" component={PatchNotesScreen} options={{ title: 'Notes de mise à jour' }} />
         <Stack.Screen name="Themes" component={ThemesScreen} options={{ title: 'Thèmes visuels' }} />
         <Stack.Screen name="XPCalculator" component={XPCalculatorScreen} options={{ title: 'Calculateur d\'XP' }} />
+        <Stack.Screen name="Adventure" component={AdventureScreen} options={{ headerShown: false }} />
       </>
     );
   };
