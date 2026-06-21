@@ -18,6 +18,11 @@
       },
       "package": "com.lifequest.app"
     },
-    "plugins": ["expo-splash-screen"]
+    "plugins": ["expo-splash-screen"],
+    "extra": {
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
   }
 }
