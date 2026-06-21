@@ -29,8 +29,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build APK (EAS preview)
-        run: eas build --platform android --profile preview --non-interactive --output ./release/LifeQuest.apk
+      - name: Build APK (EAS preview — local)
+        run: eas build --platform android --profile preview --non-interactive --local --output ./release/LifeQuest.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
