@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Link / create EAS project
+        run: eas init --non-interactive --force
+
       - name: Build APK (EAS preview — local)
         run: eas build --platform android --profile preview --non-interactive --local --output ./release/LifeQuest.apk
 
