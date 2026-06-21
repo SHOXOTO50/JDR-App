@@ -1,67 +1,82 @@
 import { useState } from 'react';
+import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { C, S } from '../theme';
 import { useGame } from '../store/gameStore';
 import { ITEMS } from '../data/items';
 import type { ItemType } from '../types';
 
 const FILTERS: { id: ItemType | 'tous'; label: string }[] = [
-  { id: 'tous', label: 'Tout' },
-  { id: 'badge', label: 'Badges' },
-  { id: 'relique', label: 'Reliques' },
-  { id: 'trophée', label: 'Trophées' },
-  { id: 'cosmétique', label: 'Cosmétiques' },
-  { id: 'compagnon', label: 'Compagnons' },
+  { id: 'tous', label: 'Tout' }, { id: 'badge', label: 'Badges' },
+  { id: 'relique', label: 'Reliques' }, { id: 'trophée', label: 'Trophées' },
+  { id: 'cosmétique', label: 'Cosmétiques' }, { id: 'compagnon', label: 'Compagnons' },
 ];
 
 export default function Inventory() {
   const unlocked = useGame((s) => s.unlockedItems);
   const [filter, setFilter] = useState<ItemType | 'tous'>('tous');
-
   const list = filter === 'tous' ? ITEMS : ITEMS.filter((i) => i.type === filter);
-  const ownedCount = unlocked.length;
 
   return (
-    <div className="app">
-      <div className="topbar">
-        <div className="brand"><span className="logo">🎒</span> Inventaire</div>
-        <span className="chip chip-gold">{ownedCount}/{ITEMS.length}</span>
-      </div>
-      <p className="muted" style={{ fontSize: 13, marginBottom: 8 }}>
-        Récompenses 100% symboliques — aucun avantage payant. La fierté de l’avoir mérité.
-      </p>
+    <SafeAreaView style={[S.flex1, { backgroundColor: C.bg }]}>
+      <View style={[S.spread, { padding: 16, paddingBottom: 8 }]}>
+        <Text style={styles.brand}>🎒 Inventaire</Text>
+        <View style={S.chip}><Text style={[S.chipText, S.chipGoldText]}>{unlocked.length}/{ITEMS.length}</Text></View>
+      </View>
 
-      <div className="tabs">
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 52 }} contentContainerStyle={styles.tabs}>
         {FILTERS.map((f) => (
-          <button key={f.id} className={`tab ${filter === f.id ? 'active' : ''}`} onClick={() => setFilter(f.id)}>
-            {f.label}
-          </button>
+          <TouchableOpacity key={f.id} style={[styles.tab, filter === f.id && styles.tabActive]} onPress={() => setFilter(f.id)}>
+            <Text style={[styles.tabTxt, filter === f.id && styles.tabTxtActive]}>{f.label}</Text>
+          </TouchableOpacity>
         ))}
-      </div>
+      </ScrollView>
 
-      <div className="itemgrid">
-        {list.map((item) => {
-          const has = unlocked.includes(item.id);
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Text style={[S.sm, { marginBottom: 14 }]}>Récompenses symboliques — aucun avantage payant.</Text>
+        <View style={styles.grid}>
+          {list.map((item) => {
+            const has = unlocked.includes(item.id);
+            const rarColor = (C.rarities as any)[item.rarity] ?? C.muted;
+            return (
+              <View key={item.id} style={[styles.itemCard, !has && styles.locked]}>
+                <Text style={{ fontSize: 34 }}>{has ? item.icon : '❔'}</Text>
+                <Text style={styles.itemName} numberOfLines={1}>{has ? item.name : '???'}</Text>
+                <Text style={[styles.rar, { color: rarColor }]}>{item.rarity}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        <Text style={S.sectionTitle}>À débloquer</Text>
+        {ITEMS.filter((i) => !unlocked.includes(i.id)).slice(0, 6).map((i) => {
+          const rarColor = (C.rarities as any)[i.rarity] ?? C.muted;
           return (
-            <div key={item.id} className={`itemcard ${has ? '' : 'locked'}`} title={item.desc}>
-              <div className="ico">{has ? item.icon : '❔'}</div>
-              <div className="name">{has ? item.name : '???'}</div>
-              <div className="rar" style={{ color: `var(--rarity-${item.rarity})` }}>{item.rarity}</div>
-            </div>
+            <View key={i.id} style={[S.card, { flexDirection: 'row', gap: 12, alignItems: 'center', marginBottom: 10, padding: 12, opacity: 0.7 }]}>
+              <Text style={{ fontSize: 26 }}>{i.icon}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={S.h3}>{i.name} <Text style={[S.xs, { color: rarColor }]}>· {i.rarity}</Text></Text>
+                <Text style={S.sm}>{i.desc}</Text>
+              </View>
+            </View>
           );
         })}
-      </div>
-
-      <div className="section-title">Objets à débloquer</div>
-      {ITEMS.filter((i) => !unlocked.includes(i.id)).slice(0, 6).map((i) => (
-        <div key={i.id} className="card" style={{ padding: 12 }}>
-          <div className="row">
-            <span style={{ fontSize: 24, opacity: 0.5 }}>{i.icon}</span>
-            <div className="grow">
-              <div style={{ fontWeight: 800 }}>{i.name} <span className="rar" style={{ color: `var(--rarity-${i.rarity})` }}>· {i.rarity}</span></div>
-              <div className="muted" style={{ fontSize: 13 }}>{i.desc}</div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  brand: { fontSize: 20, fontWeight: '900', color: C.text },
+  tabs: { paddingHorizontal: 16, gap: 8, paddingBottom: 12 },
+  tab: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 99, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.border },
+  tabActive: { borderColor: 'rgba(245,197,66,0.5)', backgroundColor: 'rgba(245,197,66,0.08)' },
+  tabTxt: { fontSize: 12, fontWeight: '700', color: C.muted },
+  tabTxtActive: { color: C.gold },
+  scroll: { padding: 16, paddingBottom: 32 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  itemCard: { width: '30%', backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 12, alignItems: 'center', gap: 4 },
+  locked: { opacity: 0.35 },
+  itemName: { fontSize: 11, fontWeight: '700', color: C.text, textAlign: 'center' },
+  rar: { fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5 },
+});

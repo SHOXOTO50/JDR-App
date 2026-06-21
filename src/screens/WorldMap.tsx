@@ -1,3 +1,6 @@
+import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { C, S } from '../theme';
 import { useGame } from '../store/gameStore';
 import { WORLD_NODES } from '../data/world';
 
@@ -7,50 +10,59 @@ export default function WorldMap() {
   const next = WORLD_NODES.find((n) => level < n.unlockLevel);
 
   return (
-    <div className="app">
-      <div className="topbar">
-        <div className="brand"><span className="logo">🗺️</span> Mon royaume</div>
-        <span className="chip chip-gold">{unlockedCount}/{WORLD_NODES.length} lieux</span>
-      </div>
-      <p className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
-        Plus tu progresses, plus ton monde s’étend : villages, cités, monuments et créatures alliées.
-      </p>
+    <SafeAreaView style={[S.flex1, { backgroundColor: C.bg }]}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={S.spread}>
+          <Text style={styles.brand}>🗺️ Mon royaume</Text>
+          <View style={S.chip}><Text style={[S.chipText, S.chipGoldText]}>{unlockedCount}/{WORLD_NODES.length}</Text></View>
+        </View>
+        <Text style={[S.sm, { marginBottom: 14 }]}>Ton monde grandit à chaque niveau franchi.</Text>
 
-      <div className="worldmap">
-        {WORLD_NODES.map((n) => {
-          const unlocked = level >= n.unlockLevel;
-          return (
-            <div key={n.id} className={`worldnode ${unlocked ? '' : 'locked'}`} style={{ left: `${n.x}%`, top: `${n.y}%` }}>
-              <span className="dot">{unlocked ? n.icon : '🔒'}</span>
-              <span className="lbl">{unlocked ? n.name : `Niv. ${n.unlockLevel}`}</span>
-            </div>
-          );
-        })}
-      </div>
+        {/* Map visuelle */}
+        <View style={styles.mapContainer}>
+          {WORLD_NODES.map((n) => {
+            const unlocked = level >= n.unlockLevel;
+            return (
+              <View key={n.id} style={[styles.node, { left: `${n.x}%` as any, top: `${n.y}%` as any }, !unlocked && styles.nodeLocked]}>
+                <Text style={styles.nodeIcon}>{unlocked ? n.icon : '🔒'}</Text>
+                <Text style={styles.nodeLabel}>{unlocked ? n.name : `Niv.${n.unlockLevel}`}</Text>
+              </View>
+            );
+          })}
+        </View>
 
-      {next && (
-        <div className="card mt">
-          <div className="muted" style={{ fontSize: 12 }}>Prochain déblocage</div>
-          <div className="spread" style={{ marginTop: 4 }}>
-            <div style={{ fontWeight: 800 }}>{next.icon} {next.name}</div>
-            <span className="chip">Niveau {next.unlockLevel}</span>
-          </div>
-          <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>{next.desc}</div>
-        </div>
-      )}
+        {next && (
+          <View style={[S.card, { marginBottom: 14 }]}>
+            <Text style={S.xs}>Prochain déblocage</Text>
+            <View style={[S.spread, { marginTop: 4 }]}>
+              <Text style={S.h3}>{next.icon} {next.name}</Text>
+              <View style={S.chip}><Text style={S.chipText}>Niveau {next.unlockLevel}</Text></View>
+            </View>
+            <Text style={[S.sm, { marginTop: 6 }]}>{next.desc}</Text>
+          </View>
+        )}
 
-      <div className="section-title">Lieux découverts</div>
-      {WORLD_NODES.filter((n) => level >= n.unlockLevel).map((n) => (
-        <div key={n.id} className="card" style={{ padding: 12 }}>
-          <div className="row">
-            <span style={{ fontSize: 26 }}>{n.icon}</span>
-            <div className="grow">
-              <div style={{ fontWeight: 800 }}>{n.name} <span className="muted" style={{ fontSize: 11 }}>· {n.type}</span></div>
-              <div className="muted" style={{ fontSize: 13 }}>{n.desc}</div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+        <Text style={S.sectionTitle}>Lieux découverts</Text>
+        {WORLD_NODES.filter((n) => level >= n.unlockLevel).map((n) => (
+          <View key={n.id} style={[S.card, { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10, padding: 12 }]}>
+            <Text style={{ fontSize: 26 }}>{n.icon}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={S.h3}>{n.name} <Text style={S.xs}>· {n.type}</Text></Text>
+              <Text style={S.sm}>{n.desc}</Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  scroll: { padding: 16, paddingBottom: 32 },
+  brand: { fontSize: 20, fontWeight: '900', color: C.text },
+  mapContainer: { width: '100%', aspectRatio: 1, borderRadius: 18, backgroundColor: '#10231a', borderWidth: 1, borderColor: C.border, marginBottom: 14, position: 'relative', overflow: 'hidden' },
+  node: { position: 'absolute', alignItems: 'center', transform: [{ translateX: -30 }, { translateY: -30 }] },
+  nodeLocked: { opacity: 0.3 },
+  nodeIcon: { fontSize: 24 },
+  nodeLabel: { fontSize: 8, fontWeight: '700', color: '#fff', backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, textAlign: 'center', maxWidth: 60 },
+});

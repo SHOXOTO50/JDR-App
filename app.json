@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "LifeQuest",
+    "slug": "lifequest-rpg",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0c0a1a"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0c0a1a"
+      },
+      "package": "com.lifequest.app"
+    },
+    "plugins": ["expo-splash-screen"]
+  }
+}

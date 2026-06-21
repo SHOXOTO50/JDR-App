@@ -1,11 +1,15 @@
-import type { Quest } from '../types';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { C, S } from '../theme';
 import { useGame } from '../store/gameStore';
 import { STAT_ICONS } from '../types';
 import { SKILL_BY_ID } from '../data/skills';
+import type { Quest } from '../types';
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+function today() { return new Date().toISOString().slice(0, 10); }
+
+const DIFF_COLOR: Record<string, string> = {
+  facile: C.green, moyenne: C.blue, difficile: '#fbbf24', épique: '#fb7185',
+};
 
 export default function QuestCard({ quest }: { quest: Quest }) {
   const progress = useGame((s) => s.questProgress[quest.id]);
@@ -20,55 +24,65 @@ export default function QuestCard({ quest }: { quest: Quest }) {
   const stepStates = progress?.steps ?? steps?.map(() => false);
 
   return (
-    <div className={`quest ${done ? 'done' : ''}`}>
-      {!steps && (
-        <button
-          className={`check ${done ? 'on' : ''}`}
-          aria-label="Terminer la quête"
-          onClick={() => !done && complete(quest.id)}
-          disabled={done}
-        >
-          {done ? '✓' : ''}
-        </button>
-      )}
-      <div className="body">
-        <div className="spread">
-          <div className="title">{quest.title}</div>
-          <span className={`difftag diff-${quest.difficulty}`}>{quest.difficulty}</span>
-        </div>
-        <div className="desc">{quest.desc}</div>
-
-        {steps && (
-          <div className="steps">
-            {steps.map((s, i) => {
-              const on = stepStates?.[i];
-              return (
-                <button key={i} className={`step ${on ? 'on' : ''}`} onClick={() => toggleStep(quest.id, i)} style={{ background: 'none', border: 'none', textAlign: 'left', padding: 0, color: 'inherit' }}>
-                  <span className={`box ${on ? 'on' : ''}`}>{on ? '✓' : ''}</span>
-                  <span>{s.label}</span>
-                </button>
-              );
-            })}
-          </div>
+    <View style={[styles.card, done && { opacity: 0.55 }]}>
+      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+        {!steps && (
+          <TouchableOpacity
+            style={[styles.check, done && styles.checkDone]}
+            onPress={() => !done && complete(quest.id)}
+            disabled={done}
+          >
+            <Text style={{ fontSize: 14, color: done ? '#2a2008' : C.gold }}>{done ? '✓' : ''}</Text>
+          </TouchableOpacity>
         )}
+        <View style={{ flex: 1 }}>
+          <View style={S.spread}>
+            <Text style={[S.h3, { flex: 1, marginRight: 8 }]}>{quest.title}</Text>
+            <Text style={[styles.diff, { color: DIFF_COLOR[quest.difficulty] }]}>{quest.difficulty}</Text>
+          </View>
+          <Text style={[S.sm, { marginTop: 3 }]}>{quest.desc}</Text>
 
-        <div className="rewards">
-          <span className="reward-pill">+{quest.xp} XP</span>
-          {Object.entries(quest.statRewards).map(([k, v]) => (
-            <span key={k} className="reward-pill">
-              {STAT_ICONS[k as keyof typeof STAT_ICONS]} +{v}
-            </span>
-          ))}
-          {quest.skillId && (
-            <span className="reward-pill skill">
-              {SKILL_BY_ID[quest.skillId]?.icon} +{quest.skillXp}
-            </span>
+          {steps && (
+            <View style={{ marginTop: 10, gap: 6 }}>
+              {steps.map((step, i) => {
+                const on = stepStates?.[i] ?? false;
+                return (
+                  <TouchableOpacity key={i} style={styles.step} onPress={() => toggleStep(quest.id, i)}>
+                    <View style={[styles.stepBox, on && styles.stepBoxOn]}>
+                      {on && <Text style={{ fontSize: 10, color: '#fff' }}>✓</Text>}
+                    </View>
+                    <Text style={[S.body, { fontSize: 13, flex: 1 }, on && { color: C.muted, textDecorationLine: 'line-through' }]}>
+                      {step.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           )}
-          {isDailyDoneToday && progress?.streak ? (
-            <span className="reward-pill">🔥 série {progress.streak}</span>
-          ) : null}
-        </div>
-      </div>
-    </div>
+
+          <View style={styles.rewards}>
+            <Text style={styles.pill}>+{quest.xp} XP</Text>
+            {Object.entries(quest.statRewards).map(([k, v]) => (
+              <Text key={k} style={styles.pill}>{STAT_ICONS[k as keyof typeof STAT_ICONS]} +{v}</Text>
+            ))}
+            {quest.skillId && <Text style={styles.pillSkill}>{SKILL_BY_ID[quest.skillId]?.icon} +{quest.skillXp}</Text>}
+            {isDailyDoneToday && progress?.streak ? <Text style={styles.pill}>🔥 {progress.streak}j</Text> : null}
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  card: { backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14, marginBottom: 10 },
+  check: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: C.goldDim, alignItems: 'center', justifyContent: 'center' },
+  checkDone: { backgroundColor: C.gold, borderColor: C.gold },
+  diff: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
+  rewards: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  pill: { fontSize: 11, fontWeight: '700', color: C.gold, backgroundColor: 'rgba(245,197,66,0.08)', borderWidth: 1, borderColor: 'rgba(245,197,66,0.25)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99 },
+  pillSkill: { fontSize: 11, fontWeight: '700', color: C.accent, backgroundColor: 'rgba(139,92,246,0.1)', borderWidth: 1, borderColor: 'rgba(139,92,246,0.3)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99 },
+  step: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  stepBox: { width: 18, height: 18, borderRadius: 4, borderWidth: 2, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  stepBoxOn: { backgroundColor: C.accent, borderColor: C.accent },
+});

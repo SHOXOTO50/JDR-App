@@ -1,0 +1,40 @@
+name: EAS Build — Android APK
+
+on:
+  push:
+    branches: [main, claude/lifequest-rpg-app-or37mc]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Expo + EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build APK (EAS preview)
+        run: eas build --platform android --profile preview --non-interactive --output ./release/LifeQuest.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LifeQuest-APK
+          path: release/LifeQuest.apk
+          retention-days: 30

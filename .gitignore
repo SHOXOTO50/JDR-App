@@ -6,3 +6,5 @@ dist/
 .vite/
 tsconfig.tsbuildinfo
 android/
+ios/
+.expo/

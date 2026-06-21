@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { C, S } from '../theme';
 import { useGame } from '../store/gameStore';
 import { CLASSES } from '../data/classes';
 import { STAT_LABELS } from '../types';
@@ -9,59 +12,67 @@ export default function Onboarding() {
   const [classId, setClassId] = useState('aventurier');
 
   return (
-    <div className="app">
-      <div className="onboard">
-        <div className="center">
-          <div style={{ fontSize: 56 }}>⚔️</div>
-          <h1 className="hero-title">LifeQuest</h1>
-          <p className="muted" style={{ marginTop: 6 }}>
-            Transforme ta vie réelle en une véritable aventure. Chaque action te fait progresser.
-          </p>
-        </div>
+    <SafeAreaView style={[S.flex1, { backgroundColor: C.bg }]}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Text style={styles.logo}>⚔️</Text>
+        <Text style={[S.h1, S.textCenter, styles.title]}>LifeQuest</Text>
+        <Text style={[S.sm, S.textCenter, { marginBottom: 24 }]}>
+          Transforme ta vie réelle en une véritable aventure.
+        </Text>
 
-        <div className="card">
-          <div className="section-title" style={{ margin: '0 0 8px' }}>Ton nom de héros</div>
-          <input
-            className="input"
+        <View style={[S.card, { marginBottom: 16 }]}>
+          <Text style={S.sectionTitle}>Ton nom de héros</Text>
+          <TextInput
+            style={S.input}
             placeholder="Ex : Lyra, Kael, ton prénom…"
+            placeholderTextColor={C.muted}
             value={name}
             maxLength={20}
-            onChange={(e) => setName(e.target.value)}
+            onChangeText={setName}
           />
-        </div>
+        </View>
 
-        <div>
-          <div className="section-title">Choisis ta classe de départ</div>
-          <div className="classpick">
-            {CLASSES.map((c) => (
-              <button
-                key={c.id}
-                className={`classcard ${classId === c.id ? 'sel' : ''}`}
-                onClick={() => setClassId(c.id)}
-                style={{ textAlign: 'left' }}
-              >
-                <span className="ico">{c.icon}</span>
-                <div className="grow">
-                  <div style={{ fontWeight: 800 }}>{c.name}</div>
-                  <div className="muted" style={{ fontSize: 13 }}>{c.tagline}</div>
-                  <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 4 }}>
-                    {Object.entries(c.bonus)
-                      .map(([k, v]) => `+${v} ${STAT_LABELS[k as keyof typeof STAT_LABELS]}`)
-                      .join(' · ')}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+        <Text style={S.sectionTitle}>Choisis ta classe</Text>
+        {CLASSES.map((c) => (
+          <TouchableOpacity
+            key={c.id}
+            style={[styles.classCard, classId === c.id && styles.classCardSel]}
+            onPress={() => setClassId(c.id)}
+          >
+            <Text style={styles.classIcon}>{c.icon}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={S.h3}>{c.name}</Text>
+              <Text style={S.sm}>{c.tagline}</Text>
+              <Text style={[S.xs, { color: C.gold, marginTop: 4 }]}>
+                {Object.entries(c.bonus).map(([k, v]) => `+${v} ${STAT_LABELS[k as keyof typeof STAT_LABELS]}`).join(' · ')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ))}
 
-        <button className="btn btn-gold btn-block mt" style={{ padding: 16, fontSize: 17 }} onClick={() => create(name, classId)}>
-          Commencer l’aventure →
-        </button>
-        <p className="muted center" style={{ fontSize: 12 }}>
-          Ta progression est sauvegardée sur cet appareil. Tu pourras tout modifier plus tard.
-        </p>
-      </div>
-    </div>
+        <TouchableOpacity
+          style={[S.btn, S.btnGold, { marginTop: 20, paddingVertical: 16 }]}
+          onPress={() => create(name, classId)}
+        >
+          <Text style={[S.btnGoldText, { fontSize: 17 }]}>Commencer l'aventure →</Text>
+        </TouchableOpacity>
+        <Text style={[S.xs, S.textCenter, { marginTop: 12 }]}>
+          Ta progression est sauvegardée sur cet appareil.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  scroll: { padding: 20, paddingBottom: 40 },
+  logo: { fontSize: 60, textAlign: 'center', marginBottom: 8 },
+  title: { fontSize: 34, marginBottom: 8 },
+  classCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    padding: 14, borderRadius: 14, marginBottom: 10,
+    backgroundColor: C.bg2, borderWidth: 2, borderColor: C.border,
+  },
+  classCardSel: { borderColor: C.gold, backgroundColor: 'rgba(245,197,66,0.08)' },
+  classIcon: { fontSize: 30 },
+});
