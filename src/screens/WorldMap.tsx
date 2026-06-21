@@ -1,11 +1,11 @@
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, S } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useAppSelector } from '../store/hooks';
 import { WORLD_NODES } from '../data/world';
 
 export default function WorldMap() {
-  const level = useGame((s) => s.level);
+  const level = useAppSelector((s) => s.game.level);
   const unlockedCount = WORLD_NODES.filter((n) => level >= n.unlockLevel).length;
   const next = WORLD_NODES.find((n) => level < n.unlockLevel);
 
@@ -18,7 +18,6 @@ export default function WorldMap() {
         </View>
         <Text style={[S.sm, { marginBottom: 14 }]}>Ton monde grandit à chaque niveau franchi.</Text>
 
-        {/* Map visuelle */}
         <View style={styles.mapContainer}>
           {WORLD_NODES.map((n) => {
             const unlocked = level >= n.unlockLevel;

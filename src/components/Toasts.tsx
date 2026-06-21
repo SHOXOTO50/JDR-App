@@ -2,16 +2,17 @@ import { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { gameActions } from '../store/slices/gameSlice';
 
 export default function Toasts() {
-  const notifications = useGame((s) => s.notifications);
-  const dismiss = useGame((s) => s.dismissNotification);
+  const notifications = useAppSelector((s) => s.game.notifications);
+  const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!notifications.length) return;
-    const timers = notifications.map((n) => setTimeout(() => dismiss(n.id), 3000));
+    const timers = notifications.map((n) => setTimeout(() => dispatch(gameActions.dismissNotification(n.id)), 3000));
     return () => timers.forEach(clearTimeout);
   }, [notifications]);
 
@@ -20,7 +21,11 @@ export default function Toasts() {
   return (
     <View style={[styles.container, { top: insets.top + 8 }]} pointerEvents="box-none">
       {notifications.slice(-3).map((n) => (
-        <TouchableOpacity key={n.id} style={[styles.toast, n.kind === 'level' && styles.toastLevel, n.kind === 'item' && styles.toastItem]} onPress={() => dismiss(n.id)}>
+        <TouchableOpacity
+          key={n.id}
+          style={[styles.toast, n.kind === 'level' && styles.toastLevel, n.kind === 'item' && styles.toastItem]}
+          onPress={() => dispatch(gameActions.dismissNotification(n.id))}
+        >
           <Text style={styles.toastText}>{n.text}</Text>
         </TouchableOpacity>
       ))}

@@ -1,7 +1,8 @@
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, S } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useGame, useAppDispatch } from '../store/hooks';
+import { gameActions } from '../store/slices/gameSlice';
 import { CLASSES, TITLES } from '../data/classes';
 import { STAT_LABELS, STAT_ICONS, StatKey } from '../types';
 import { xpToNext } from '../engine/xp';
@@ -9,7 +10,7 @@ import XPBar from '../components/XPBar';
 
 export default function Character() {
   const s = useGame();
-  const setTitle = useGame((st) => st.setTitle);
+  const dispatch = useAppDispatch();
   const cls = CLASSES.find((c) => c.id === s.classId) ?? CLASSES[0];
 
   return (
@@ -53,8 +54,12 @@ export default function Character() {
             const unlocked = s.unlockedTitles.includes(t.id);
             const active = s.titleId === t.id;
             return (
-              <TouchableOpacity key={t.id} onPress={() => unlocked && setTitle(t.id)} disabled={!unlocked}
-                style={[styles.titleRow, active && { backgroundColor: 'rgba(245,197,66,0.08)' }]}>
+              <TouchableOpacity
+                key={t.id}
+                onPress={() => unlocked && dispatch(gameActions.setTitle(t.id))}
+                disabled={!unlocked}
+                style={[styles.titleRow, active && { backgroundColor: 'rgba(245,197,66,0.08)' }]}
+              >
                 <View style={{ flex: 1 }}>
                   <Text style={[S.h3, !unlocked && { color: C.muted }]}>{unlocked ? '' : '🔒 '}{t.name}</Text>
                   <Text style={S.xs}>{t.requirement}</Text>

@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { C, S } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { gameActions } from '../store/slices/gameSlice';
 import { STAT_ICONS } from '../types';
 import { SKILL_BY_ID } from '../data/skills';
 import type { Quest } from '../types';
@@ -12,9 +13,8 @@ const DIFF_COLOR: Record<string, string> = {
 };
 
 export default function QuestCard({ quest }: { quest: Quest }) {
-  const progress = useGame((s) => s.questProgress[quest.id]);
-  const complete = useGame((s) => s.completeQuest);
-  const toggleStep = useGame((s) => s.toggleStep);
+  const progress = useAppSelector((s) => s.game.questProgress[quest.id]);
+  const dispatch = useAppDispatch();
 
   const isDailyDoneToday = quest.repeatable && progress?.lastDone === today();
   const isCompleted = !quest.repeatable && progress?.status === 'completed';
@@ -29,7 +29,7 @@ export default function QuestCard({ quest }: { quest: Quest }) {
         {!steps && (
           <TouchableOpacity
             style={[styles.check, done && styles.checkDone]}
-            onPress={() => !done && complete(quest.id)}
+            onPress={() => !done && dispatch(gameActions.completeQuest(quest.id))}
             disabled={done}
           >
             <Text style={{ fontSize: 14, color: done ? '#2a2008' : C.gold }}>{done ? '✓' : ''}</Text>
@@ -47,7 +47,7 @@ export default function QuestCard({ quest }: { quest: Quest }) {
               {steps.map((step, i) => {
                 const on = stepStates?.[i] ?? false;
                 return (
-                  <TouchableOpacity key={i} style={styles.step} onPress={() => toggleStep(quest.id, i)}>
+                  <TouchableOpacity key={i} style={styles.step} onPress={() => dispatch(gameActions.toggleStep({ questId: quest.id, stepIndex: i }))}>
                     <View style={[styles.stepBox, on && styles.stepBoxOn]}>
                       {on && <Text style={{ fontSize: 10, color: '#fff' }}>✓</Text>}
                     </View>

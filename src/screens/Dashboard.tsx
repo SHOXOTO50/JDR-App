@@ -2,7 +2,7 @@ import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { C, S } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useGame } from '../store/hooks';
 import { CLASSES, TITLES } from '../data/classes';
 import { xpToNext } from '../engine/xp';
 import XPBar from '../components/XPBar';
@@ -22,7 +22,6 @@ export default function Dashboard() {
   return (
     <SafeAreaView style={[S.flex1, { backgroundColor: C.bg }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Topbar */}
         <View style={[S.spread, { marginBottom: 14 }]}>
           <Text style={styles.brand}>⚔️ LifeQuest</Text>
           <TouchableOpacity style={S.chip} onPress={() => nav.navigate('Stats')}>
@@ -30,7 +29,6 @@ export default function Dashboard() {
           </TouchableOpacity>
         </View>
 
-        {/* Hero card */}
         <View style={S.card}>
           <View style={S.row}>
             <View style={styles.avatar}><Text style={{ fontSize: 40 }}>{cls.icon}</Text></View>

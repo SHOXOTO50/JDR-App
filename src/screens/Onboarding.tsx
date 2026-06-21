@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, S } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useAppDispatch } from '../store/hooks';
+import { gameActions } from '../store/slices/gameSlice';
 import { CLASSES } from '../data/classes';
 import { STAT_LABELS } from '../types';
 
 export default function Onboarding() {
-  const create = useGame((s) => s.createCharacter);
+  const dispatch = useAppDispatch();
   const [name, setName] = useState('');
   const [classId, setClassId] = useState('aventurier');
 
@@ -52,7 +53,7 @@ export default function Onboarding() {
 
         <TouchableOpacity
           style={[S.btn, S.btnGold, { marginTop: 20, paddingVertical: 16 }]}
-          onPress={() => create(name, classId)}
+          onPress={() => dispatch(gameActions.createCharacter({ name, classId }))}
         >
           <Text style={[S.btnGoldText, { fontSize: 17 }]}>Commencer l'aventure →</Text>
         </TouchableOpacity>

@@ -1,14 +1,14 @@
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, S } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useAppSelector } from '../store/hooks';
 import { SKILLS } from '../data/skills';
 import { STAT_LABELS } from '../types';
 import { skillXpToNext } from '../engine/xp';
 import XPBar from '../components/XPBar';
 
 export default function SkillTree() {
-  const skillProgress = useGame((s) => s.skillProgress);
+  const skillProgress = useAppSelector((s) => s.game.skillProgress);
   const sorted = [...SKILLS].sort((a, b) => (skillProgress[b.id]?.level ?? 1) - (skillProgress[a.id]?.level ?? 1));
 
   return (

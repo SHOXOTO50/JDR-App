@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, S } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { gameActions } from '../store/slices/gameSlice';
 import QuestCard from '../components/QuestCard';
-import type { QuestType, Difficulty, StatKey } from '../types';
+import type { QuestType, Difficulty, Quest } from '../types';
 
 const TABS: { id: QuestType | 'toutes'; label: string }[] = [
   { id: 'toutes', label: 'Toutes' },
@@ -15,9 +16,8 @@ const TABS: { id: QuestType | 'toutes'; label: string }[] = [
 ];
 
 export default function QuestJournal() {
-  const quests = useGame((s) => s.quests);
-  const generate = useGame((s) => s.generateAutoQuests);
-  const addCustom = useGame((s) => s.addCustomQuest);
+  const quests = useAppSelector((s) => s.game.quests);
+  const dispatch = useAppDispatch();
   const [tab, setTab] = useState<QuestType | 'toutes'>('toutes');
   const [showAdd, setShowAdd] = useState(false);
 
@@ -44,7 +44,7 @@ export default function QuestJournal() {
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
         {(tab === 'auto' || tab === 'toutes') && (
-          <TouchableOpacity style={[S.btn, S.btnAccent, { marginBottom: 14 }]} onPress={generate}>
+          <TouchableOpacity style={[S.btn, S.btnAccent, { marginBottom: 14 }]} onPress={() => dispatch(gameActions.generateAutoQuests())}>
             <Text style={S.btnAccentText}>🪄 Générer des quêtes (Coach IA)</Text>
           </TouchableOpacity>
         )}
@@ -52,12 +52,16 @@ export default function QuestJournal() {
         {sorted.map((q) => <QuestCard key={q.id} quest={q} />)}
       </ScrollView>
 
-      <AddQuestModal visible={showAdd} onClose={() => setShowAdd(false)} onAdd={addCustom} />
+      <AddQuestModal
+        visible={showAdd}
+        onClose={() => setShowAdd(false)}
+        onAdd={(q) => dispatch(gameActions.addCustomQuest(q))}
+      />
     </SafeAreaView>
   );
 }
 
-function AddQuestModal({ visible, onClose, onAdd }: any) {
+function AddQuestModal({ visible, onClose, onAdd }: { visible: boolean; onClose: () => void; onAdd: (q: Omit<Quest, 'id'>) => void }) {
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty>('moyenne');

@@ -1,13 +1,14 @@
 import { ScrollView, View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, S } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useGame, useAppDispatch } from '../store/hooks';
+import { gameActions } from '../store/slices/gameSlice';
 import { totalXpForLevel } from '../engine/xp';
 import { STAT_LABELS, STAT_ICONS, StatKey } from '../types';
 
 export default function Stats() {
   const s = useGame();
-  const reset = useGame((st) => st.resetGame);
+  const dispatch = useAppDispatch();
   const completed = Object.values(s.questProgress).filter((p) => p.status === 'completed' || p.lastDone).length;
   const totalXp = totalXpForLevel(s.level) + s.xp;
   const topStat = (Object.keys(s.stats) as StatKey[]).sort((a, b) => s.stats[b] - s.stats[a])[0];
@@ -15,7 +16,7 @@ export default function Stats() {
   const handleReset = () => {
     Alert.alert('Réinitialiser', 'Toute ta progression sera perdue. Es-tu sûr ?', [
       { text: 'Annuler', style: 'cancel' },
-      { text: 'Recommencer', style: 'destructive', onPress: reset },
+      { text: 'Recommencer', style: 'destructive', onPress: () => dispatch(gameActions.resetGame()) },
     ]);
   };
 

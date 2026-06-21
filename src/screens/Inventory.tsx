@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, S } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useAppSelector } from '../store/hooks';
 import { ITEMS } from '../data/items';
 import type { ItemType } from '../types';
 
@@ -13,7 +13,7 @@ const FILTERS: { id: ItemType | 'tous'; label: string }[] = [
 ];
 
 export default function Inventory() {
-  const unlocked = useGame((s) => s.unlockedItems);
+  const unlocked = useAppSelector((s) => s.game.unlockedItems);
   const [filter, setFilter] = useState<ItemType | 'tous'>('tous');
   const list = filter === 'tous' ? ITEMS : ITEMS.filter((i) => i.type === filter);
 

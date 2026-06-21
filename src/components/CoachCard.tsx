@@ -1,10 +1,11 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { C, S } from '../theme';
-import { useGame } from '../store/gameStore';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { gameActions } from '../store/slices/gameSlice';
 
 export default function CoachCard() {
-  const messages = useGame((s) => s.coachMessages);
-  const ask = useGame((s) => s.askCoach);
+  const messages = useAppSelector((s) => s.game.coachMessages);
+  const dispatch = useAppDispatch();
   const latest = messages[0];
   return (
     <View style={styles.coach}>
@@ -12,7 +13,7 @@ export default function CoachCard() {
       <View style={{ flex: 1 }}>
         <Text style={styles.tone}>Coach · {latest?.tone ?? 'motivation'}</Text>
         <Text style={[S.body, { marginTop: 2 }]}>{latest?.text ?? 'Bienvenue, héros. Prêt à écrire ta légende ?'}</Text>
-        <TouchableOpacity onPress={ask} style={styles.btn}>
+        <TouchableOpacity onPress={() => dispatch(gameActions.askCoach())} style={styles.btn}>
           <Text style={styles.btnTxt}>💬 Parler au Coach</Text>
         </TouchableOpacity>
       </View>
