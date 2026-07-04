@@ -3,6 +3,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, S } from '../theme';
 import { useAppSelector } from '../store/hooks';
 import { WORLD_NODES } from '../data/world';
+import AppearView from '../components/anim/AppearView';
+import Pulse from '../components/anim/Pulse';
 
 export default function WorldMap() {
   const level = useAppSelector((s) => s.game.level);
@@ -18,17 +20,25 @@ export default function WorldMap() {
         </View>
         <Text style={[S.sm, { marginBottom: 14 }]}>Ton monde grandit à chaque niveau franchi.</Text>
 
+        <AppearView delay={0}>
         <View style={styles.mapContainer}>
           {WORLD_NODES.map((n) => {
             const unlocked = level >= n.unlockLevel;
-            return (
-              <View key={n.id} style={[styles.node, { left: `${n.x}%` as any, top: `${n.y}%` as any }, !unlocked && styles.nodeLocked]}>
+            const isLatest = unlocked && !WORLD_NODES.some((m) => m.unlockLevel > n.unlockLevel && level >= m.unlockLevel);
+            const node = (
+              <>
                 <Text style={styles.nodeIcon}>{unlocked ? n.icon : '🔒'}</Text>
                 <Text style={styles.nodeLabel}>{unlocked ? n.name : `Niv.${n.unlockLevel}`}</Text>
+              </>
+            );
+            return (
+              <View key={n.id} style={[styles.node, { left: `${n.x}%` as any, top: `${n.y}%` as any }, !unlocked && styles.nodeLocked]}>
+                {isLatest ? <Pulse to={1.15} duration={800} style={{ alignItems: 'center' }}>{node}</Pulse> : node}
               </View>
             );
           })}
         </View>
+        </AppearView>
 
         {next && (
           <View style={[S.card, { marginBottom: 14 }]}>

@@ -5,9 +5,13 @@ import { C, S } from '../theme';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { gameActions } from '../store/slices/gameSlice';
 import QuestCard from '../components/QuestCard';
+import AppearView from '../components/anim/AppearView';
+import Bouncy from '../components/anim/Bouncy';
 import type { QuestType, Difficulty, Quest } from '../types';
 
-const TABS: { id: QuestType | 'toutes'; label: string }[] = [
+type TabId = QuestType | 'toutes' | 'nsfw';
+
+const BASE_TABS: { id: TabId; label: string }[] = [
   { id: 'toutes', label: 'Toutes' },
   { id: 'quotidienne', label: 'Quotidiennes' },
   { id: 'secondaire', label: 'Secondaires' },
@@ -17,11 +21,19 @@ const TABS: { id: QuestType | 'toutes'; label: string }[] = [
 
 export default function QuestJournal() {
   const quests = useAppSelector((s) => s.game.quests);
+  const sexMode = useAppSelector((s) => s.game.sexMode);
   const dispatch = useAppDispatch();
-  const [tab, setTab] = useState<QuestType | 'toutes'>('toutes');
+  const [tab, setTab] = useState<TabId>('toutes');
   const [showAdd, setShowAdd] = useState(false);
 
-  const filtered = tab === 'toutes' ? quests : quests.filter((q) => q.type === tab);
+  const tabs = sexMode ? [...BASE_TABS, { id: 'nsfw' as TabId, label: '🔞 Alcôve' }] : BASE_TABS;
+  const activeTab = tab === 'nsfw' && !sexMode ? 'toutes' : tab;
+
+  const visible = quests.filter((q) => !q.nsfw || sexMode);
+  const filtered =
+    activeTab === 'toutes' ? visible :
+    activeTab === 'nsfw' ? visible.filter((q) => q.nsfw) :
+    visible.filter((q) => q.type === activeTab);
   const order: Record<QuestType, number> = { principale: 0, secondaire: 1, quotidienne: 2, auto: 3 };
   const sorted = [...filtered].sort((a, b) => order[a.type] - order[b.type]);
 
@@ -29,27 +41,40 @@ export default function QuestJournal() {
     <SafeAreaView style={[S.flex1, { backgroundColor: C.bg }]}>
       <View style={styles.topbar}>
         <Text style={styles.brand}>📜 Quêtes</Text>
-        <TouchableOpacity style={[S.btn, S.btnGold, { paddingHorizontal: 12, paddingVertical: 8 }]} onPress={() => setShowAdd(true)}>
+        <Bouncy style={[S.btn, S.btnGold, { paddingHorizontal: 12, paddingVertical: 8 }]} onPress={() => setShowAdd(true)}>
           <Text style={S.btnGoldText}>+ Quête</Text>
-        </TouchableOpacity>
+        </Bouncy>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 52 }} contentContainerStyle={styles.tabs}>
-        {TABS.map((t) => (
-          <TouchableOpacity key={t.id} style={[styles.tab, tab === t.id && styles.tabActive]} onPress={() => setTab(t.id)}>
-            <Text style={[styles.tabTxt, tab === t.id && styles.tabTxtActive]}>{t.label}</Text>
+        {tabs.map((t) => (
+          <TouchableOpacity
+            key={t.id}
+            style={[styles.tab, activeTab === t.id && styles.tabActive, t.id === 'nsfw' && styles.tabNsfw]}
+            onPress={() => setTab(t.id)}
+          >
+            <Text style={[styles.tabTxt, activeTab === t.id && styles.tabTxtActive]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {(tab === 'auto' || tab === 'toutes') && (
-          <TouchableOpacity style={[S.btn, S.btnAccent, { marginBottom: 14 }]} onPress={() => dispatch(gameActions.generateAutoQuests())}>
+        {(activeTab === 'auto' || activeTab === 'toutes') && (
+          <Bouncy style={[S.btn, S.btnAccent, { marginBottom: 14 }]} onPress={() => dispatch(gameActions.generateAutoQuests())}>
             <Text style={S.btnAccentText}>🪄 Générer des quêtes (Coach IA)</Text>
-          </TouchableOpacity>
+          </Bouncy>
+        )}
+        {activeTab === 'nsfw' && (
+          <Text style={[S.sm, { marginBottom: 12 }]}>
+            🤫 Le mode Alcôve reste entre toi et l'appli. Désactivable dans Stats.
+          </Text>
         )}
         {sorted.length === 0 && <Text style={[S.sm, S.textCenter]}>Aucune quête. Crées-en une !</Text>}
-        {sorted.map((q) => <QuestCard key={q.id} quest={q} />)}
+        {sorted.map((q, i) => (
+          <AppearView key={q.id} delay={Math.min(i, 10) * 35} from={16}>
+            <QuestCard quest={q} />
+          </AppearView>
+        ))}
       </ScrollView>
 
       <AddQuestModal
@@ -108,9 +133,9 @@ function AddQuestModal({ visible, onClose, onAdd }: { visible: boolean; onClose:
             ))}
           </View>
 
-          <TouchableOpacity style={[S.btn, S.btnGold]} onPress={submit}>
+          <Bouncy style={[S.btn, S.btnGold]} onPress={submit}>
             <Text style={S.btnGoldText}>Ajouter la quête</Text>
-          </TouchableOpacity>
+          </Bouncy>
         </ScrollView>
       </View>
     </Modal>
@@ -123,6 +148,7 @@ const styles = StyleSheet.create({
   tabs: { paddingHorizontal: 16, gap: 8, paddingBottom: 12 },
   tab: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.border },
   tabActive: { borderColor: 'rgba(245,197,66,0.5)', backgroundColor: 'rgba(245,197,66,0.08)' },
+  tabNsfw: { borderColor: 'rgba(251,113,133,0.5)' },
   tabTxt: { fontSize: 13, fontWeight: '700', color: C.muted },
   tabTxtActive: { color: C.gold },
   list: { padding: 16, paddingTop: 4, paddingBottom: 32 },

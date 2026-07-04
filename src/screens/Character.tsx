@@ -7,6 +7,8 @@ import { CLASSES, TITLES } from '../data/classes';
 import { STAT_LABELS, STAT_ICONS, StatKey } from '../types';
 import { xpToNext } from '../engine/xp';
 import XPBar from '../components/XPBar';
+import AppearView from '../components/anim/AppearView';
+import Pulse from '../components/anim/Pulse';
 
 export default function Character() {
   const s = useGame();
@@ -18,8 +20,11 @@ export default function Character() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={S.sectionTitle}>Personnage</Text>
 
+        <AppearView delay={0}>
         <View style={[S.card, { alignItems: 'center', gap: 10 }]}>
-          <View style={styles.avatar}><Text style={{ fontSize: 42 }}>{cls.icon}</Text></View>
+          <Pulse to={1.05} duration={1300}>
+            <View style={styles.avatar}><Text style={{ fontSize: 42 }}>{cls.icon}</Text></View>
+          </Pulse>
           <Text style={S.h2}>{s.name}</Text>
           <Text style={S.sm}>{cls.name} · {cls.tagline}</Text>
           <View style={[S.row, { gap: 8, flexWrap: 'wrap', justifyContent: 'center' }]}>
@@ -32,8 +37,10 @@ export default function Character() {
             <Text style={[S.xs, S.textCenter]}>{s.xp} / {xpToNext(s.level)} XP</Text>
           </View>
         </View>
+        </AppearView>
 
         <Text style={S.sectionTitle}>Statistiques</Text>
+        <AppearView delay={90}>
         <View style={[S.card, { gap: 0 }]}>
           <View style={styles.statGrid}>
             {(Object.keys(STAT_LABELS) as StatKey[]).map((k) => (
@@ -47,8 +54,10 @@ export default function Character() {
             ))}
           </View>
         </View>
+        </AppearView>
 
         <Text style={S.sectionTitle}>Titres</Text>
+        <AppearView delay={170}>
         <View style={S.card}>
           {TITLES.map((t) => {
             const unlocked = s.unlockedTitles.includes(t.id);
@@ -69,6 +78,7 @@ export default function Character() {
             );
           })}
         </View>
+        </AppearView>
       </ScrollView>
     </SafeAreaView>
   );

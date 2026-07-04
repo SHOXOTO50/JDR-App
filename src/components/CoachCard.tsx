@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { C, S } from '../theme';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { gameActions } from '../store/slices/gameSlice';
+import Pulse from './anim/Pulse';
 
 export default function CoachCard() {
   const messages = useAppSelector((s) => s.game.coachMessages);
@@ -9,7 +10,9 @@ export default function CoachCard() {
   const latest = messages[0];
   return (
     <View style={styles.coach}>
-      <Text style={styles.avatar}>🧝‍♀️</Text>
+      <Pulse to={1.1} duration={1000}>
+        <Text style={styles.avatar}>🧝‍♀️</Text>
+      </Pulse>
       <View style={{ flex: 1 }}>
         <Text style={styles.tone}>Coach · {latest?.tone ?? 'motivation'}</Text>
         <Text style={[S.body, { marginTop: 2 }]}>{latest?.text ?? 'Bienvenue, héros. Prêt à écrire ta légende ?'}</Text>

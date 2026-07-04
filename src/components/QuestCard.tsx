@@ -4,6 +4,7 @@ import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { gameActions } from '../store/slices/gameSlice';
 import { STAT_ICONS } from '../types';
 import { SKILL_BY_ID } from '../data/skills';
+import Bouncy from './anim/Bouncy';
 import type { Quest } from '../types';
 
 function today() { return new Date().toISOString().slice(0, 10); }
@@ -27,17 +28,18 @@ export default function QuestCard({ quest }: { quest: Quest }) {
     <View style={[styles.card, done && { opacity: 0.55 }]}>
       <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
         {!steps && (
-          <TouchableOpacity
+          <Bouncy
             style={[styles.check, done && styles.checkDone]}
+            scaleTo={0.8}
             onPress={() => !done && dispatch(gameActions.completeQuest(quest.id))}
             disabled={done}
           >
             <Text style={{ fontSize: 14, color: done ? '#2a2008' : C.gold }}>{done ? '✓' : ''}</Text>
-          </TouchableOpacity>
+          </Bouncy>
         )}
         <View style={{ flex: 1 }}>
           <View style={S.spread}>
-            <Text style={[S.h3, { flex: 1, marginRight: 8 }]}>{quest.title}</Text>
+            <Text style={[S.h3, { flex: 1, marginRight: 8 }]}>{quest.nsfw ? '🔞 ' : ''}{quest.title}</Text>
             <Text style={[styles.diff, { color: DIFF_COLOR[quest.difficulty] }]}>{quest.difficulty}</Text>
           </View>
           <Text style={[S.sm, { marginTop: 3 }]}>{quest.desc}</Text>

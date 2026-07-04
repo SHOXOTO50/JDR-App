@@ -6,6 +6,7 @@ import { SKILLS } from '../data/skills';
 import { STAT_LABELS } from '../types';
 import { skillXpToNext } from '../engine/xp';
 import XPBar from '../components/XPBar';
+import AppearView from '../components/anim/AppearView';
 
 export default function SkillTree() {
   const skillProgress = useAppSelector((s) => s.game.skillProgress);
@@ -16,6 +17,7 @@ export default function SkillTree() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.brand}>🌳 Compétences</Text>
         <Text style={[S.sm, { marginBottom: 14 }]}>Chaque compétence évolue de 1 à 100 et débloque son archétype.</Text>
+        <AppearView delay={0}>
         <View style={S.card}>
           {sorted.map((sk, i) => {
             const p = skillProgress[sk.id] ?? { level: 1, xp: 0 };
@@ -38,6 +40,7 @@ export default function SkillTree() {
             );
           })}
         </View>
+        </AppearView>
       </ScrollView>
     </SafeAreaView>
   );

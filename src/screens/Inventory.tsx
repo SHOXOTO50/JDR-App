@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, S } from '../theme';
 import { useAppSelector } from '../store/hooks';
 import { ITEMS } from '../data/items';
+import AppearView from '../components/anim/AppearView';
 import type { ItemType } from '../types';
 
 const FILTERS: { id: ItemType | 'tous'; label: string }[] = [
@@ -35,15 +36,17 @@ export default function Inventory() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={[S.sm, { marginBottom: 14 }]}>Récompenses symboliques — aucun avantage payant.</Text>
         <View style={styles.grid}>
-          {list.map((item) => {
+          {list.map((item, i) => {
             const has = unlocked.includes(item.id);
             const rarColor = (C.rarities as any)[item.rarity] ?? C.muted;
             return (
-              <View key={item.id} style={[styles.itemCard, !has && styles.locked]}>
-                <Text style={{ fontSize: 34 }}>{has ? item.icon : '❔'}</Text>
-                <Text style={styles.itemName} numberOfLines={1}>{has ? item.name : '???'}</Text>
-                <Text style={[styles.rar, { color: rarColor }]}>{item.rarity}</Text>
-              </View>
+              <AppearView key={item.id} delay={Math.min(i, 12) * 30} from={14} style={styles.itemWrap}>
+                <View style={[styles.itemCard, !has && styles.locked]}>
+                  <Text style={{ fontSize: 34 }}>{has ? item.icon : '❔'}</Text>
+                  <Text style={styles.itemName} numberOfLines={1}>{has ? item.name : '???'}</Text>
+                  <Text style={[styles.rar, { color: rarColor }]}>{item.rarity}</Text>
+                </View>
+              </AppearView>
             );
           })}
         </View>
@@ -75,7 +78,8 @@ const styles = StyleSheet.create({
   tabTxtActive: { color: C.gold },
   scroll: { padding: 16, paddingBottom: 32 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  itemCard: { width: '30%', backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 12, alignItems: 'center', gap: 4 },
+  itemWrap: { width: '30%' },
+  itemCard: { width: '100%', backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 12, alignItems: 'center', gap: 4 },
   locked: { opacity: 0.35 },
   itemName: { fontSize: 11, fontWeight: '700', color: C.text, textAlign: 'center' },
   rar: { fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5 },

@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Stats, StatKey, Quest, QuestProgress, SkillProgress, CoachMessage, GameLogEntry } from '../../types';
 import { STARTER_QUESTS } from '../../data/quests';
+import { NSFW_QUESTS } from '../../data/nsfwQuests';
 import { SKILLS } from '../../data/skills';
 import { ITEMS } from '../../data/items';
 import { CLASSES, TITLES } from '../../data/classes';
@@ -44,6 +45,9 @@ export interface GameState {
   lastActiveDay: string;
   bestStreak: number;
   notifications: Notification[];
+  /** Easter egg : mode secret 🔞 « Alcôve ». */
+  sexModeUnlocked: boolean;
+  sexMode: boolean;
 }
 
 const initialState: GameState = {
@@ -56,6 +60,7 @@ const initialState: GameState = {
   coachMessages: [], log: [],
   lastActiveDay: today(), bestStreak: 0,
   notifications: [],
+  sexModeUnlocked: false, sexMode: false,
 };
 
 function runAskCoach(state: GameState) {
@@ -194,6 +199,42 @@ const gameSlice = createSlice({
 
     dismissNotification: (state, action: PayloadAction<string>) => {
       state.notifications = state.notifications.filter((n) => n.id !== action.payload);
+    },
+
+    /** Easter egg : 7 taps sur le logo → déblocage du mode Alcôve 🔞. */
+    unlockSexMode: (state) => {
+      if (state.sexModeUnlocked) {
+        state.sexMode = !state.sexMode;
+        state.notifications.push({
+          id: nid(), kind: 'item',
+          text: state.sexMode ? '🔞 Mode Alcôve activé…' : '🔒 Mode Alcôve désactivé.',
+        });
+        return;
+      }
+      state.sexModeUnlocked = true;
+      state.sexMode = true;
+      const existing = new Set(state.quests.map((q) => q.id));
+      for (const q of NSFW_QUESTS) {
+        if (!existing.has(q.id)) state.quests.push(q);
+      }
+      state.notifications.push({ id: nid(), kind: 'level', text: '🔞 Easter egg ! Mode Alcôve débloqué…' });
+    },
+
+    toggleSexMode: (state, action: PayloadAction<boolean>) => {
+      if (state.sexModeUnlocked) state.sexMode = action.payload;
+    },
+
+    /** Fusionne le nouveau contenu (quêtes ajoutées par les mises à jour) dans les vieilles sauvegardes. */
+    syncContent: (state) => {
+      const existing = new Set(state.quests.map((q) => q.id));
+      for (const q of STARTER_QUESTS) {
+        if (!existing.has(q.id)) state.quests.push(q);
+      }
+      if (state.sexModeUnlocked) {
+        for (const q of NSFW_QUESTS) {
+          if (!existing.has(q.id)) state.quests.push(q);
+        }
+      }
     },
 
     resetGame: (state) => {

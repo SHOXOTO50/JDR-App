@@ -67,6 +67,8 @@ export interface Quest {
   repeatable?: boolean;
   /** Quêtes principales en plusieurs étapes. */
   steps?: { label: string; done: boolean }[];
+  /** Visible uniquement quand le mode secret 🔞 est actif. */
+  nsfw?: boolean;
 }
 
 export interface QuestProgress {
