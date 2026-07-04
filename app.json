@@ -21,7 +21,7 @@
     "plugins": ["expo-splash-screen"],
     "extra": {
       "eas": {
-        "projectId": "00000000-0000-0000-0000-000000000000"
+        "projectId": "add40409-d852-4e08-9c26-885fdfc4aaa6"
       }
     }
   }
